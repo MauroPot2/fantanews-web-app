@@ -48,9 +48,6 @@ class PerplexityClient:
             result = response.json()
             content = result['choices'][0]['message']['content'].strip()
 
-            # Post-processa per assicurare che l'articolo sia completo
-            content = self._post_process(content, match_data)
-
             print(f"✅ Articolo generato - lunghezza: {len(content)} caratteri")
             return content
 
@@ -63,51 +60,76 @@ class PerplexityClient:
 
     def _build_prompt(self, match_data):
         """
-        Costruisce prompt dettagliato usando i dati di partita estratti.
+        Costruisce prompt dettagliato e strutturato usando i dati di partita estratti.
         """
         home_team = match_data.get('home_team', 'Casa')
         away_team = match_data.get('away_team', 'Trasferta')
-        home_score = match_data.get('home_total', 0)
-        away_score = match_data.get('away_total', 0)
+
+        # ✅ Usa il punteggio reale per determinare il risultato della partita
+        real_home_score = match_data.get('home_score', 0)
+        real_away_score = match_data.get('away_score', 0)
+
+        # ✅ Usa il punteggio fantacalcio per il riepilogo
+        try:
+            fantasy_home_score = float(match_data.get('home_total', 0))
+        except (ValueError, TypeError):
+            fantasy_home_score = 0.0
+
+        try:
+            fantasy_away_score = float(match_data.get('away_total', 0))
+        except (ValueError, TypeError):
+            fantasy_away_score = 0.0
+            
         gameweek = match_data.get('gameweek', 'N/A')
 
         players_info = self._format_players_info(match_data)
 
         summary = (
             f"**RIEPILOGO PARTITA DAL PARSER:** 🏠 Casa: {len(match_data.get('home_players', []))} titolari + "
-            f"{len(match_data.get('home_bench', []))} panchina = {home_score:.1f} punti totali ✈️ Trasferta: "
+            f"{len(match_data.get('home_bench', []))} panchina = {fantasy_home_score:.1f} punti totali ✈️ Trasferta: "
             f"{len(match_data.get('away_players', []))} titolari + {len(match_data.get('away_bench', []))} panchina = "
-            f"{away_score:.1f} punti totali"
+            f"{fantasy_away_score:.1f} punti totali"
         )
 
-        if home_score > away_score:
+        # Determina il risultato basato sul punteggio reale
+        if real_home_score > real_away_score:
             result = f"vittoria di {home_team}"
-        elif away_score > home_score:
+        elif real_away_score > real_home_score:
             result = f"vittoria di {away_team}"
         else:
             result = "pareggio"
 
+        # Istruzioni fondamentali per l'AI
+        base_instructions = (
+            f"Sei un giornalista sportivo esperto di fantacalcio italiano. "
+            f"Devi scrivere un articolo di cronaca sportiva usando ESCLUSIVAMENTE i dati reali che ti fornirò. "
+            f"Enfatizza nomi, punteggi e statistiche e scrivili sempre in grassetto"
+            f"Segui rigidamente la struttura HTML e le sezioni che ti indico. "
+            f"NON inventare mai nomi, punteggi o formazioni. "
+            f"Includi sempre i nomi dei giocatori forniti. L'articolo deve essere completo e non interrotto."
+        )
+
+        # Prompt con struttura rigida
         prompt = (
-            f"Scrivi un articolo di cronaca sportiva usando ESCLUSIVAMENTE i dati reali estratti dal parser Excel:\n"
-            f"**PARTITA**: {home_team} {home_score:.1f} - {away_score:.1f} {away_team}\n"
-            f"**GIORNATA**: {gameweek}\n"
-            f"**RISULTATO**: {result}\n"
-            f"{summary}\n"
-            f"**GIOCATORI REALI ESTRATTI DAL PARSER (USA SOLO QUESTI NOMI):**\n"
-            f"{players_info}\n"
-            f"**ISTRUZIONI FONDAMENTALI**:\n"
-            f"- Usa esclusivamente i nomi dei giocatori elencati sopra\n"
-            f"- Ogni giocatore ha il punteggio fantacalcio reale estratto dal file Excel\n"
-            f"- Non inventare mai nomi di fantasia\n"
-            f"- Menziona almeno 8-10 giocatori per nome nell'articolo\n"
-            f"- Analizza le prestazioni basandoti sui punteggi reali mostrati\n"
-            f"- I giocatori con punteggio >8.0 hanno fatto ottime prestazioni\n"
-            f"- I giocatori con punteggio <6.0 hanno fatto prestazioni sottotono\n"
-            f"**REQUISITI ARTICOLO:**\n"
-            f"- Lunghezza: 800-1000 parole\n"
-            f"- Tono: giornalistico sportivo, coinvolgente\n"
-            f"- Lingua: italiano\n"
-            f"Scrivi l'articolo completo in HTML usando i dati reali del parser."
+            f"{base_instructions}\n\n"
+            f"**DATI PARTITA:**\n"
+            f"PARTITA: {home_team} vs {away_team}\n"
+            f"RISULTATO: {home_team} {real_home_score} - {real_away_score} {away_team}\n" # ✅ Usa punteggio reale qui
+            f"GIORNATA: {gameweek}\n"
+            f"RIEPILOGO STATISTICHE: {summary}\n"
+            f"GIOCATORI E PUNTI FANTACALCIO REALI: {players_info}\n\n"
+            f"**STRUTTURA ARTICOLO (FORMATO HTML):**\n\n"
+            f"<h2>Fantacalcio: {home_team} vs {away_team}</h2>\n\n"
+            f"<h3>Il Resoconto della Partita</h3>\n"
+            f"<p>Descrivi l'andamento del match. Commenta i punteggi totali e il risultato finale.</p>\n\n"
+            f"<h3>I Migliori in Campo</h3>\n"
+            f"<p>Analizza le prestazioni dei giocatori che hanno ottenuto i punteggi più alti (>8.0). Menziona almeno 3-4 nomi e il loro contributo.</p>\n\n"
+            f"<h3>Le delusioni e i Flop</h3>\n"
+            f"<p>Identifica i giocatori che hanno avuto un rendimento deludente (<6.0). Commenta il loro punteggio e come ha influenzato il risultato della loro squadra.</p>\n\n"
+            f"<h3>Tattica e Sostituzioni</h3>\n"
+            f"<p>Commenta le formazioni (se disponibili) e l'impatto di eventuali sostituzioni (se i dati lo permettono) sul risultato finale.</p>\n\n"
+            f"<h3>Conclusione</h3>\n"
+            f"<p>Riassumi i punti salienti della partita e le sue implicazioni per la classifica. Chiudi con una frase d'impatto.</p>"
         )
 
         return prompt
@@ -123,11 +145,25 @@ class PerplexityClient:
             for p in players[:11]:  # solo titolari o primi 11
                 name = p.get('name', 'Sconosciuto')
                 role = p.get('role', 'N/A')
-                fv = p.get('fanta_vote', 0)
-                v = p.get('vote', 0)
-                line = f"- {name} ({role}): {fv:.1f} punti fantacalcio"
-                if v and v != fv:
-                    line += f" (voto {v:.1f})"
+
+                fv = p.get('fanta_vote')
+                if fv is None:
+                    fv_str = "N/A"
+                else:
+                    fv_str = f"{fv:.1f}"
+
+                v = p.get('vote')
+                if v is None:
+                    v_str = ""
+                else:
+                    v_str = f"{v:.1f}"
+
+                played = p.get('played', False)
+                if not played:
+                    line = f"- {name} ({role}) - NON SCHIERATO"
+                else:
+                    line = f"- {name} ({role}) - Voto: {v_str}, FantaVoto: {fv_str}"
+
                 lines.append(line)
 
         home_players = match_data.get('home_players', [])
@@ -155,22 +191,6 @@ class PerplexityClient:
                 lines.append(f"- {performer}")
 
         return "\n".join(lines)
-
-    def _post_process(self, content, match_data):
-        """
-        Garantisce che l'articolo finisce correttamente e aggiunge conclusione standard se mancante.
-        """
-        if not content.endswith(('.', '!', '?')):
-            sentences = content.split('.')
-            if len(sentences) > 1:
-                content = '.'.join(sentences[:-1]) + '.'
-            conclusion = (
-                f"\n\n<p>La partita tra {match_data.get('home_team')} e {match_data.get('away_team')} "
-                f"si chiude con questo risultato che avrà sicuramente ripercussioni sulla classifica del fantacalcio. "
-                "L'analisi dettagliata delle prestazioni individuali conferma l'importanza delle scelte tattiche in questa giornata di campionato.</p>"
-            )
-            content += conclusion
-        return content
 
     def _fallback_article(self, match_data, error_message):
         """

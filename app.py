@@ -359,8 +359,8 @@ def process_matches_with_logging(filepath, gameweek, generate_articles=True, upd
                     'away_team': original_match.get('away_team', 'Sconosciuto'),
                     'home_score': original_match.get('home_score', 0),         # Gol reali o punteggio reale, coerente con DB
                     'away_score': original_match.get('away_score', 0),
-                    'home_total': original_match.get('home_total', 0.0),       # Punteggio fantacalcio complessivo
-                    'away_total': original_match.get('away_total', 0.0),
+                    'home_total': float(original_match.get('home_total', 0.0)),       # Punteggio fantacalcio complessivo
+                    'away_total': float(original_match.get('away_total', 0.0)),
                     'gameweek': int(gameweek),
                     'home_formation_code': original_match.get('home_formation_code', ''),
                     'away_formation_code': original_match.get('away_formation_code', ''),
