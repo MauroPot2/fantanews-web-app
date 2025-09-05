@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Partite{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-primary mb-3">⚽ Partite del Campionato</h1>
+            <p class="lead text-muted">Risultati e statistiche di tutte le partite</p>
+        </div>
+    </div>
+
+    <!-- Filtri -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">🔍 Filtra per Giornata</h5>
+                    <form method="GET" class="d-flex gap-2">
+                        <select name="gameweek" class="form-select">
+                            <option value="">Tutte le giornate</option>
+                            {% for gw in range(1, 39) %}
+                                <option value="{{ gw }}" {% if gw == selected_gameweek %}selected{% endif %}>
+                                    Giornata {{ gw }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-funnel-fill"></i> Filtra
+                        </button>
+                        <a href="{{ url_for('matches') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if matches and matches|length > 0 %}
+        <div class="row g-4">
+            {% for match in matches %}
+                {% set home_score = match.home_score | float %}
+                {% set away_score = match.away_score | float %}
+                {% set home_goals = ((home_score - 60) / 6) | int if home_score > 60 else 0 %}
+                {% set away_goals = ((away_score - 60) / 6) | int if away_score > 60 else 0 %}
+                
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card h-100 shadow-sm border-0 hover-card">
+                        <div class="card-body">
+                            <!-- Teams -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="team-section text-center flex-grow-1">
+                                    <div class="team-icon mb-1">🏠</div>
+                                    <h6 class="fw-bold mb-0 small">{{ match.home_team | default('Casa') }}</h6>
+                                </div>
+                                <div class="vs-section mx-3">
+                                    <span class="badge bg-light text-dark">VS</span>
+                                </div>
+                                <div class="team-section text-center flex-grow-1">
+                                    <div class="team-icon mb-1">✈️</div>
+                                    <h6 class="fw-bold mb-0 small">{{ match.away_team | default('Trasferta') }}</h6>
+                                </div>
+                            </div>
+
+                            <!-- Score -->
+                            <div class="score-section text-center mb-3 p-3 bg-light rounded">
+                                <h3 class="fw-bold text-primary mb-1">{{ home_goals }} - {{ away_goals }}</h3>
+                                <small class="text-muted">
+                                    Fantacalcio: {{ "%.1f"|format(home_score) }} - {{ "%.1f"|format(away_score) }}
+                                </small>
+                            </div>
+
+                            <!-- Result Badge -->
+                            <div class="text-center mb-3">
+                                {% if home_goals > away_goals %}
+                                    <span class="badge bg-success px-3 py-1">
+                                        <i class="bi bi-house-fill me-1"></i>Vittoria Casa
+                                    </span>
+                                {% elif away_goals > home_goals %}
+                                    <span class="badge bg-info px-3 py-1">
+                                        <i class="bi bi-airplane-fill me-1"></i>Vittoria Trasferta
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark px-3 py-1">
+                                        <i class="bi bi-handshake me-1"></i>Pareggio
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Gameweek -->
+                            <div class="text-center mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    Giornata {{ match.gameweek | default('N/A') }}
+                                </small>
+                            </div>
+
+                            <!-- Action Button -->
+                            <div class="d-grid">
+                                <a href="{{ url_for('match_detail', match_id=match.id) }}" class="btn btn-primary">
+                                    <i class="bi bi-eye-fill me-2"></i>Vedi Dettagli
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="text-muted mb-3">Nessuna partita trovata</h3>
+            <p class="text-muted mb-4">
+                {% if selected_gameweek %}
+                    Non ci sono partite per la giornata {{ selected_gameweek }}.
+                {% else %}
+                    Non ci sono partite nel database.
+                {% endif %}
+            </p>
+            <div class="d-flex gap-2 justify-content-center">
+                {% if selected_gameweek %}
+                    <a href="{{ url_for('matches') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Vedi Tutte
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('admin') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Aggiungi Partite
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.hover-card {
+    transition: all 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.team-icon {
+    font-size: 1.5rem;
+}
+
+.score-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+</style>
+{% endblock %}

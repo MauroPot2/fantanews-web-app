@@ -1,0 +1,53 @@
+<!-- templates/teams.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5">Squadre Fanta Grimaldi</h1>
+    
+    {% if teams %}
+    <div class="row">
+        {% for team in teams %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ team.name }}</h5>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <strong>{{ team.points }}</strong>
+                            <br><small class="text-muted">Punti</small>
+                        </div>
+                        <div class="col-6">
+                            <strong>{{ team.matches_played }}</strong>
+                            <br><small class="text-muted">Partite</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center small">
+                        <div class="col-4">
+                            <span class="text-success">{{ team.wins }}V</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="text-warning">{{ team.draws }}N</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="text-danger">{{ team.losses }}P</span>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ url_for('team_detail', team_name=team.name) }}" 
+                           class="btn btn-outline-primary btn-sm">Dettagli</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center">
+        <p class="text-muted">Nessuna squadra ancora registrata.</p>
+        <a href="{{ url_for('admin') }}" class="btn btn-primary">Carica Prima Giornata</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{{ match.home_team | default('Casa') }} vs {{ match.away_team | default('Trasferta') }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-5 fw-bold">
+                    {{ match.home_team | default('Casa') }} vs {{ match.away_team | default('Trasferta') }}
+                </h1>
+                <span class="badge bg-primary fs-6">📅 Giornata {{ match.gameweek | default('N/A') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">🏆 Dettagli Partita</h5>
+                </div>
+                <div class="card-body">
+                    {% set home_goals = ((match.home_score | int - 60) / 6 | int if (match.home_score | float) > 60 else 0) %}
+                    {% set away_goals = ((match.away_score | int - 60) / 6 | int if (match.away_score | float) > 60 else 0) %}
+
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Tipo Punteggio</th>
+                                    <th>{{ match.home_team | default('Casa') }}</th>
+                                    <th>{{ match.away_team | default('Trasferta') }}</th>
+                                    <th>Differenza</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>⚽ Gol Classici</td>
+                                    <td>{{ "%.1f"|format(home_goals) | int }}</td>
+                                    <td>{{ "%.1f"|format(away_goals) | int }}</td>
+                                    <td>{{ "%.1f"|format(home_goals - away_goals) | int }}</td>
+                                </tr>
+                                <tr>
+                                    <td>🏆 Punteggio Fantacalcio</td>
+                                    <td>{{ "%.1f"|format(match.home_score | float) }}</td>
+                                    <td>{{ "%.1f"|format(match.away_score | float) }}</td>
+                                    <td>{{ "%.1f"|format((match.home_score | float) - (match.away_score | float)) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {% if article %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">📰 Cronaca della Partita</h5>
+                </div>
+                <div class="card-body">
+                    {{ article.content | safe }}
+                </div>
+            </div>
+            {% else %}
+            <div class="card mt-4">
+                <div class="card-body text-center text-muted">
+                    <i class="bi bi-hourglass-split fs-1 mb-3"></i>
+                    <h5>La cronaca è in fase di completamento</h5>
+                    <p>La cronaca dettagliata di questa partita sarà disponibile a breve.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">⚡ Azioni Rapide</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('matches') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>Torna alle Partite
+                        </a>
+                        {% if article %}
+                        <a href="{{ url_for('article_detail', article_id=article.id) }}" class="btn btn-outline-success">
+                            <i class="bi bi-newspaper me-2"></i>Leggi Articolo
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Articoli{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-primary mb-3">📰 Articoli Fantacalcio</h1>
+            <p class="lead text-muted">Cronache e analisi generate dall'intelligenza artificiale</p>
+        </div>
+    </div>
+
+    {% if articles and articles|length > 0 %}
+        <!-- Filtri -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">🔍 Cerca negli Articoli</h6>
+                        <form method="GET" class="d-flex gap-2">
+                            <input type="text" name="search" class="form-control" placeholder="Cerca per titolo o squadra..." value="{{ request.args.get('search', '') }}">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-end">
+                    <div class="badge bg-info fs-6">
+                        {{ articles|length }} articoli trovati
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista Articoli -->
+        <div class="row g-4">
+            {% for article in articles %}
+            <div class="col-lg-6 col-xl-4">
+                <div class="card h-100 shadow-sm border-0 hover-article">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span class="badge bg-primary">📰 AI Generated</span>
+                            <small class="text-muted">
+                                {% if article.created_at %}
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    {{ article.created_at.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    Data sconosciuta
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <h5 class="card-title mb-3">
+                            <a href="{{ url_for('article_detail', article_id=article.id) }}" class="text-decoration-none">
+                                {{ article.title | default('Articolo senza titolo') | truncate(60) }}
+                            </a>
+                        </h5>
+
+                        {% if article.content %}
+                        <p class="card-text text-muted">
+                            {{ article.content | striptags | truncate(120) }}
+                        </p>
+                        {% else %}
+                        <p class="card-text text-muted fst-italic">
+                            Contenuto in elaborazione...
+                        </p>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <a href="{{ url_for('article_detail', article_id=article.id) }}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye-fill me-1"></i>Leggi
+                            </a>
+                            
+                            {% if article.match_id %}
+                            <a href="{{ url_for('match_detail', match_id=article.match_id) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-trophy me-1"></i>Partita
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginazione (se implementata) -->
+        {% if pagination %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <nav aria-label="Paginazione articoli">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('articles', page=pagination.prev_num) }}">
+                                <i class="bi bi-chevron-left"></i> Precedente
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in pagination.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('articles', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('articles', page=pagination.next_num) }}">
+                                Successiva <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-newspaper text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="text-muted mb-3">Nessun articolo pubblicato</h3>
+            <p class="text-muted mb-4">
+                Non ci sono ancora articoli pubblicati. Gli articoli vengono generati automaticamente 
+                quando elabori le partite nell'area admin.
+            </p>
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="{{ url_for('admin') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Carica Partite
+                </a>
+                <a href="{{ url_for('matches') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-trophy me-2"></i>Vedi Partite
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.hover-article {
+    transition: all 0.3s ease;
+}
+
+.hover-article:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card-title a:hover {
+    color: var(--bs-primary) !important;
+}
+</style>
+{% endblock %}

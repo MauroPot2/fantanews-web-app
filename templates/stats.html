@@ -1,0 +1,154 @@
+<!-- templates/stats.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5">Statistiche Fanta Grimaldi</h1>
+    
+    <!-- Statistiche Generali -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2 class="text-primary">{{ total_matches }}</h2>
+                    <p class="card-text">Partite Giocate</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2 class="text-success">{{ total_teams }}</h2>
+                    <p class="card-text">Squadre Partecipanti</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2 class="text-warning">{{ "%.1f"|format(avg_goals_per_match) }}</h2>
+                    <p class="card-text">Media Gol/Partita</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h2 class="text-info">{{ gameweek_stats|length }}</h2>
+                    <p class="card-text">Giornate Disputate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Top Performers -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🏆 Record Squadre</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_team %}
+                    <div class="mb-3">
+                        <strong>Capolista:</strong>
+                        <br>{{ top_team.name }} - {{ top_team.points }} punti
+                    </div>
+                    {% endif %}
+                    
+                    {% if top_scorer_team %}
+                    <div class="mb-3">
+                        <strong>Miglior Attacco:</strong>
+                        <br>{{ top_scorer_team.name }} - {{ "%.1f"|format(top_scorer_team.goals_for) }} gol
+                    </div>
+                    {% endif %}
+                    
+                    {% if total_teams > 0 %}
+                    <div class="mb-3">
+                        <strong>Miglior Difesa:</strong>
+                        <br>
+                        {% set best_defense = teams|selectattr('matches_played', '>', 0)|min(attribute='goals_against') if teams else None %}
+                        {% if best_defense %}
+                            {{ best_defense.name }} - {{ "%.1f"|format(best_defense.goals_against) }} gol subiti
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Partite Spettacolari -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🎯 Partite Più Spettacolari</h5>
+                </div>
+                <div class="card-body">
+                    {% if high_scoring_matches %}
+                        {% for match in high_scoring_matches %}
+                        <div class="mb-2">
+                            <strong>{{ match.home_team }}</strong> {{ match.home_score }} - {{ match.away_score }} <strong>{{ match.away_team }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                Giornata {{ match.gameweek }} - Totale: {{ match.home_score + match.away_score }} gol
+                            </small>
+                            {% if match.id %}
+                                <a href="{{ url_for('match_detail', match_id=match.id) }}" class="btn btn-sm btn-outline-primary ms-2">Dettagli</a>
+                            {% endif %}
+                        </div>
+                        <hr class="my-2">
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">Nessuna partita ancora disputata.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiche per Giornata -->
+    {% if gameweek_stats %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>📊 Statistiche per Giornata</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Giornata</th>
+                                    <th>Partite</th>
+                                    <th>Totale Gol</th>
+                                    <th>Media Gol/Partita</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gw, stats in gameweek_stats.items()|sort %}
+                                <tr>
+                                    <td><strong>{{ gw }}</strong></td>
+                                    <td>{{ stats.matches }}</td>
+                                    <td>{{ "%.1f"|format(stats.total_goals) }}</td>
+                                    <td>{{ "%.2f"|format(stats.avg_goals) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Link Utili -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('standings') }}" class="btn btn-primary me-2">Classifica Completa</a>
+        <a href="{{ url_for('matches') }}" class="btn btn-outline-primary">Tutte le Partite</a>
+    </div>
+</div>
+{% endblock %}

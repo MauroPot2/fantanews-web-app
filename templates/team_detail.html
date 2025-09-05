@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name | default('Squadra') }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold text-primary mb-4">
+                🏆 {{ team.name | default('Squadra') }}
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">🏈 Partite Giocate</h5>
+                </div>
+                <div class="card-body">
+                    {% if matches and matches|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Giornata</th>
+                                        <th>Casa</th>
+                                        <th>Risultato</th>
+                                        <th>Trasferta</th>
+                                        <th>Esito</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for match in matches %}
+                                    <tr>
+                                        <td>{{ match.gameweek | default('N/A') }}</td>
+                                        <td>
+                                            {% if match.home_team == (team.name | default('')) %}
+                                                <strong>{{ match.home_team | default('Casa') }}</strong>
+                                            {% else %}
+                                                {{ match.home_team | default('Casa') }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('match_detail', match_id=match.id) }}" class="text-decoration-none">
+                                                {{ "%.1f"|format(match.home_score | float) }} - {{ "%.1f"|format(match.away_score | float) }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {% if match.away_team == (team.name | default('')) %}
+                                                <strong>{{ match.away_team | default('Trasferta') }}</strong>
+                                            {% else %}
+                                                {{ match.away_team | default('Trasferta') }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% set home_score = match.home_score | float %}
+                                            {% set away_score = match.away_score | float %}
+                                            {% if (match.home_team == (team.name | default('')) and home_score > away_score) or (match.away_team == (team.name | default('')) and away_score > home_score) %}
+                                                <span class="badge bg-success">V</span>
+                                            {% elif home_score == away_score %}
+                                                <span class="badge bg-warning text-dark">N</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">P</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-3">Nessuna partita giocata</h5>
+                            <p class="text-muted">Questa squadra non ha ancora giocato partite.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">📊 Statistiche</h6>
+                </div>
+                <div class="card-body">
+                    {% if matches and matches|length > 0 %}
+                        {% set total_matches = matches|length %}
+                        {% set home_matches = matches|selectattr('home_team', 'equalto', team.name|default(''))|list %}
+                        {% set away_matches = matches|selectattr('away_team', 'equalto', team.name|default(''))|list %}
+                        
+                        <p><strong>Partite in casa:</strong> {{ home_matches|length }}</p>
+                        <p><strong>Partite in trasferta:</strong> {{ away_matches|length }}</p>
+                        <p><strong>Totale partite:</strong> {{ total_matches }}</p>
+                    {% else %}
+                        <p class="text-muted">Nessuna statistica disponibile</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">⚡ Azioni Rapide</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('matches') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>Torna alle Partite
+                        </a>
+                        <a href="{{ url_for('standings') }}" class="btn btn-outline-success">
+                            <i class="bi bi-trophy me-2"></i>Vedi Classifica
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}La Liga 2025-26 - Fantacalcio Italiano{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="hero-section text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">⚽ La Liga 2025-26</h1>
+        <p class="lead">La liga più competitiva del fantacalcio italiano. Segui tutte le partite, le statistiche e gli articoli della stagione 2025-26.</p>
+        
+        <div class="mt-4">
+            <a href="{{ url_for('matches') }}" class="btn btn-primary me-3">Vedi Partite</a>
+            <a href="{{ url_for('standings') }}" class="btn btn-outline-primary">Classifica</a>
+        </div>
+    </div>
+
+    {% if teams and teams|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Pos</th>
+                        <th>Squadra</th>
+                        <th>Punti</th>
+                        <th>V</th>
+                        <th>N</th>
+                        <th>P</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team in teams %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            {% if team.id %}
+                                <a href="{{ url_for('team_detail', team_id=team.id) }}">{{ team.name | default('Squadra') }}</a>
+                            {% else %}
+                                {{ team.name | default('Squadra') }}
+                            {% endif %}
+                        </td>
+                        <td>{{ team.points | default(0) }}</td>
+                        <td>{{ team.wins | default(0) }}</td>
+                        <td>{{ team.draws | default(0) }}</td>
+                        <td>{{ team.losses | default(0) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <h3 class="text-muted">Nessuna squadra ancora registrata</h3>
+            <p class="text-muted">Carica la prima giornata per iniziare</p>
+            <a href="{{ url_for('admin') }}" class="btn btn-primary">Carica Prima Giornata</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

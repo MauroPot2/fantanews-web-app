@@ -1,0 +1,7 @@
+1- Sistemare punteggi con fasce di gol
+2- Creare una pagina team_detail
+3- Testare l'effettivo funzionamento dell'api perplexity
+4- Attivare un sistema di autenticazione admin con rotte protette
+5- Rendere l'app usufruibile tramite registrazione
+6- Creare tutto il CRUD riguardante la registrazione
+7- Azzerare il Db e procedere al testing
