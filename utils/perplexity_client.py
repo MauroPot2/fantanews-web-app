@@ -1,6 +1,61 @@
 import os
 import requests
 
+TEAM_CUSTOMIZATIONS = {
+    '21 Cannelloni' : {
+        'stadio': 'Merisacchio Stadium',
+        'allenatore': 'Giovanni',
+        'nomignolo': 'il principe ereditiero',
+    },
+    'L SGARRUPATI' : {
+        'stadio': '',
+        'allenatore': 'Antonio Pot',
+        'direttore sportivo': 'Michele',
+        'nomignolo': 'Sir Antonio D\'Inghilterra'
+    },
+    'SPARTAK J&N' : {
+        'stadio': 'Malito Stadium',
+        'allenatore': 'Luigi',
+        'nomignolo': 'u putigaru'
+    },
+    'MANCHESTORS CITY' : {
+        'stadio': 'Montebeltrano Stadium',
+        'allenatore': 'Carmelo',
+        'nomignolo': 'Orso'
+    },
+    'ESTATHEO' : {
+        'stadio': '',
+        'allenatore': 'Bruno',
+        'nomignolo': ''
+    },
+    'FC CELL-TIC GLASGOW' : {
+        'stadio': 'Vasciuta UPower',
+        'allenatore': 'Gaetano',
+        'nomignolo': 'Tano'
+    },
+    'A.S. DONALD DUCK' : {
+        'stadio': 'Paperopoli Stadium',
+        'allenatore': 'Antonio Pucci',
+        'nomignolo': 'il professore'
+    },
+    'Mbarcatura © FC' : {
+        'stadio': 'Stadio Mbarcatura',
+        'allenatore': 'Riccardo',
+        'nomignolo': ''
+    },
+    'EpicTominello' : {
+        'stadio': 'BarberShop Stadium',
+        'allenatore': 'Giovanni',
+        'nomignolo': 'Mozzo'
+    },
+    'Nk Mauribor'   : {
+        'stadio': 'Stadio della Bora',
+        'allenatore': 'Mauro',
+        'nomignolo': ''
+    },
+  
+ }
+
 class PerplexityClient:
     def __init__(self):
         # Carica la chiave API da variabili ambiente
@@ -99,6 +154,17 @@ class PerplexityClient:
         else:
             result = "pareggio"
 
+        # Recupera personalizzazioni squadra
+        home_custom = TEAM_CUSTOMIZATIONS.get(home_team, {})
+        stadio_home = home_custom.get('stadio', 'Stadio Sconosciuto')
+        allenatore_home = home_custom.get('allenatore', 'Allenatore Sconosciuto')
+        nomignolo_home = home_custom.get('nomignolo', '')
+
+        # Recupera personalizzazioni squadra ospite
+        away_custom = TEAM_CUSTOMIZATIONS.get(away_team, {})
+        stadio_away = away_custom.get('stadio', 'Stadio Sconosciuto')
+        allenatore_away = away_custom.get('allenatore', 'Allenatore Sconosciuto')
+        nomignolo_away = away_custom.get('nomignolo', '')
         # Istruzioni fondamentali per l'AI
         base_instructions = (
             f"Sei un giornalista sportivo esperto di fantacalcio italiano. "
@@ -121,7 +187,10 @@ class PerplexityClient:
             f"**STRUTTURA ARTICOLO (FORMATO HTML):**\n\n"
             f"<h2>{home_team} vs {away_team}</h2>\n\n"
             f"<h3>Il Resoconto della Partita</h3>\n"
+            f"<p>La partita si è giocata al **{stadio_home}**. Analizza il match e commenta il risultato finale di {real_home_score}-{real_away_score}.</p>\n\n"
             f"<p>Descrivi l'andamento del match. Commenta i punteggi totali e il risultato finale.</p>\n\n"
+            f"<p>Commenta le scelte tattiche di **{allenatore_home}** e **{allenatore_away}**.Utilizza spesso ma non sempre **{nomignolo_home}** e **{nomignolo_away}**.</p>\n\n"
+            f"<h3>Sottolinea i punti di forza e debolezza emersi dai punteggi totali e dalle singole prestazioni.</h3>\n"
             f"<h3>I Migliori in Campo</h3>\n"
             f"<p>Analizza le prestazioni dei giocatori che hanno ottenuto i punteggi più alti (>8.0). Menziona almeno 3-4 nomi e il loro contributo.</p>\n\n"
             f"<h3>Le delusioni e i Flop</h3>\n"
@@ -204,3 +273,4 @@ class PerplexityClient:
             f"<p>Partita conclusa con risultato {home_score:.1f} - {away_score:.1f}.</p>"
             f"<p><em>Articolo generato automaticamente a causa di un errore: {error_message}</em></p>"
         )
+
