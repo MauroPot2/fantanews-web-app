@@ -2,13 +2,13 @@ import os
 import requests
 
 TEAM_CUSTOMIZATIONS = {
-    '21 Cannelloni' : {
+    '21 CANNELLONI' : {
         'stadio': 'Merisacchio Stadium',
         'allenatore': 'Giovanni',
         'nomignolo': 'il principe ereditiero',
     },
     'L SGARRUPATI' : {
-        'stadio': '',
+        'stadio': 'UK Arena',
         'allenatore': 'Antonio Pot',
         'direttore sportivo': 'Michele',
         'nomignolo': 'Sir Antonio D\'Inghilterra'
@@ -33,23 +33,23 @@ TEAM_CUSTOMIZATIONS = {
         'allenatore': 'Gaetano',
         'nomignolo': 'Tano'
     },
-    'A.S. DONALD DUCK' : {
+    'A.S.DONALD DUCK' : {
         'stadio': 'Paperopoli Stadium',
         'allenatore': 'Antonio Pucci',
         'nomignolo': 'il professore'
     },
-    'Mbarcatura © FC' : {
+    'MBARCATURA © FC' : {
         'stadio': 'Stadio Mbarcatura',
         'allenatore': 'Riccardo',
         'nomignolo': ''
     },
-    'EpicTominello' : {
+    'EPICTOMINELLO' : {
         'stadio': 'BarberShop Stadium',
         'allenatore': 'Giovanni',
         'nomignolo': 'Mozzo'
     },
-    'Nk Mauribor'   : {
-        'stadio': 'Stadio della Bora',
+    'NK MAURIBOR'   : {
+        'stadio': 'Peroni Arena',
         'allenatore': 'Mauro',
         'nomignolo': ''
     },
@@ -168,6 +168,7 @@ class PerplexityClient:
         # Istruzioni fondamentali per l'AI
         base_instructions = (
             f"Sei un giornalista sportivo esperto di fantacalcio italiano. "
+            f"Scrivi articoli che non superino i 2000 caratteri. "
             f"Devi scrivere un articolo di cronaca sportiva usando ESCLUSIVAMENTE i dati reali che ti fornirò. "
             f"Enfatizza nomi, punteggi e statistiche e scrivili sempre in grassetto"
             f"Segui rigidamente la struttura HTML e le sezioni che ti indico. "
@@ -190,7 +191,6 @@ class PerplexityClient:
             f"<p>La partita si è giocata al **{stadio_home}**. Analizza il match e commenta il risultato finale di {real_home_score}-{real_away_score}.</p>\n\n"
             f"<p>Descrivi l'andamento del match. Commenta i punteggi totali e il risultato finale.</p>\n\n"
             f"<p>Commenta le scelte tattiche di **{allenatore_home}** e **{allenatore_away}**.Utilizza spesso ma non sempre **{nomignolo_home}** e **{nomignolo_away}**.</p>\n\n"
-            f"<h3>Sottolinea i punti di forza e debolezza emersi dai punteggi totali e dalle singole prestazioni.</h3>\n"
             f"<h3>I Migliori in Campo</h3>\n"
             f"<p>Analizza le prestazioni dei giocatori che hanno ottenuto i punteggi più alti (>8.0). Menziona almeno 3-4 nomi e il loro contributo.</p>\n\n"
             f"<h3>Le delusioni e i Flop</h3>\n"
