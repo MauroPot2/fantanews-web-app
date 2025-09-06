@@ -4,6 +4,7 @@ import threading
 import queue
 import json
 from dotenv import load_dotenv
+from sqlalchemy import func
 from datetime import datetime, timedelta
 from flask import Flask, request, render_template, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
@@ -181,6 +182,77 @@ def standings():
     except Exception as e:
         print(f"Errore classifica: {e}")
         return render_template('standings.html', standings=[])
+    
+@app.route('/stats')
+def stats():
+    """
+    Gestisce la pagina delle statistiche.
+    Recupera i dati necessari dal database e li passa al template.
+    """
+    try:
+        # Statistiche generali
+        total_matches = Match.query.count()
+        total_teams = Team.query.count()
+        total_goals_sum = db.session.query(func.sum(Match.home_score) + func.sum(Match.away_score)).scalar()
+        avg_goals_per_match = (total_goals_sum / total_matches) if total_matches > 0 else 0
+        
+        gameweek_stats_raw = db.session.query(
+            Match.gameweek,
+            func.count(Match.gameweek),
+            func.sum(Match.home_score + Match.away_score),
+            func.avg(Match.home_score + Match.away_score)
+        ).group_by(Match.gameweek).order_by(Match.gameweek).all()
+
+        gameweek_stats = {
+            gw: {
+                'matches': count,
+                'total_goals': total_goals,
+                'avg_goals': avg_goals
+            } for gw, count, total_goals, avg_goals in gameweek_stats_raw
+        }
+
+        # Dati squadre
+        teams = Team.query.order_by(Team.points.desc()).all()
+        top_team = teams[0] if teams else None
+        
+        top_scorer_team = Team.query.order_by(Team.goals_for.desc()).first()
+        
+        best_defense = Team.query.filter(Team.matches_played > 0).order_by(Team.goals_against).first()
+
+        # Partite più spettacolari (con più gol)
+        high_scoring_matches = Match.query.order_by(
+            (Match.home_score + Match.away_score).desc()
+        ).limit(5).all()
+        
+        # Converte gli oggetti Match in dizionari per il template
+        spectacular_matches = [
+            {
+                'home_team': match.home_team_obj.name,
+                'away_team': match.away_team_obj.name,
+                'home_score': match.home_score,
+                'away_score': match.away_score,
+                'gameweek': match.gameweek,
+                'id': match.id
+            } for match in high_scoring_matches
+        ]
+        
+        return render_template(
+            'stats.html',
+            total_matches=total_matches,
+            total_teams=total_teams,
+            avg_goals_per_match=avg_goals_per_match,
+            gameweek_stats=gameweek_stats,
+            teams=teams,
+            top_team=top_team,
+            top_scorer_team=top_scorer_team,
+            best_defense=best_defense,
+            high_scoring_matches=spectacular_matches
+        )
+
+    except Exception as e:
+        # Gestione degli errori, puoi reindirizzare a una pagina di errore
+        print(f"Errore nella route stats: {e}")
+        return render_template('errors/500.html'), 500
 
 # ===== ADMIN ROUTES =====
 @app.route('/admin')
