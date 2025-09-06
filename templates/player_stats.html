@@ -1,0 +1,71 @@
+<!-- templates/player_stats.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow-lg rounded-lg border-0">
+        <div class="card-body p-5">
+            <div class="d-flex align-items-center mb-4">
+                <img src="https://placehold.co/100x100/A0B9D6/FFFFFF?text=Player" class="img-fluid rounded-circle me-3" alt="Player Image">
+                <div>
+                    <h1 class="card-title mb-0">{{ player.name }}</h1>
+                    <p class="card-subtitle text-muted">{{ player.team.name if player.team else "Senza squadra" }}</p>
+                </div>
+            </div>
+
+            <!-- Riepilogo Statistiche -->
+            <div class="row text-center mb-5 g-4">
+                <div class="col-md-4">
+                    <div class="card p-3 h-100">
+                        <h2 class="text-primary">{{ player.goals }}</h2>
+                        <p class="card-text">Gol Totali</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 h-100">
+                        <h2 class="text-success">{{ player.assists }}</h2>
+                        <p class="card-text">Assist Totali</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 h-100">
+                        <h2 class="text-info">{{ "%.2f"|format(avg_fantavoto) }}</h2>
+                        <p class="card-text">Media Fantavoto</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabella Voti per Partita -->
+            <h2 class="mb-4">Dettaglio Voti</h2>
+            {% if player_stats %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="bg-light">
+                        <tr>
+                            <th scope="col">Giornata</th>
+                            <th scope="col">Voto</th>
+                            <th scope="col">Partita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in player_stats %}
+                        <tr>
+                            <td>{{ stat.match.gameweek }}</td>
+                            <td>{{ "%.1f"|format(stat.fantavoto) }}</td>
+                            <td>{{ stat.match.home_team }} - {{ stat.match.away_team }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center">Nessun voto disponibile per questo giocatore.</p>
+            {% endif %}
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('stats') }}" class="btn btn-secondary">Torna alle Statistiche</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

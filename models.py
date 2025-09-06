@@ -1,4 +1,3 @@
-# models.py
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from utils.fantacalcio_utils import points_to_goals
@@ -23,6 +22,9 @@ class Team(db.Model):
     goals_against = db.Column(db.Integer, default=0, nullable=False)
     points_for = db.Column(db.Float, default=0.0, nullable=False)
     points_against = db.Column(db.Float, default=0.0, nullable=False)
+    
+    # Aggiunge la relazione con la classe Player
+    players = db.relationship('Player', backref='team', lazy=True)
 
     @property
     def goal_difference(self):
@@ -83,3 +85,22 @@ class Article(db.Model):
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Player(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    goals = db.Column(db.Integer, default=0)
+    assists = db.Column(db.Integer, default=0)
+    clean_sheets = db.Column(db.Integer, default=0)
+    is_goalkeeper = db.Column(db.Boolean, default=False)
+    
+class PlayerStat(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey('player.id'))
+    match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
+    fantavoto = db.Column(db.Float, nullable=False)
+    
+    # Relazioni con i modelli Player e Match
+    player = db.relationship('Player', backref=db.backref('stats', lazy=True))
+    match = db.relationship('Match', backref=db.backref('player_stats', lazy=True))

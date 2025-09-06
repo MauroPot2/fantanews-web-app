@@ -4,7 +4,8 @@ import threading
 import queue
 import json
 from dotenv import load_dotenv
-from sqlalchemy import func
+from sqlalchemy import func, desc
+from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 from flask import Flask, request, render_template, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
@@ -12,7 +13,7 @@ from werkzeug.utils import secure_filename
 
 load_dotenv()
 from extensions import db  # Importa l'istanza db da extensions.py
-from models import Match, Article, Team
+from models import Match, Article, Team, PlayerStat, Player
 
 # ===== INIZIALIZZAZIONE APP =====
 app = Flask(__name__)
@@ -152,6 +153,11 @@ def article_detail(article_id):
                          match=match,
                          articles_list=articles_list)
 
+@app.route('/teams')
+def teams():
+    teams_with_players = Team.query.options(joinedload(Team.players)).order_by(Team.name).all()
+    return render_template('teams.html', teams=teams_with_players)
+
 @app.route('/teams/<int:team_id>')
 def team_detail(team_id):
     """Pagina dettaglio di una squadra"""
@@ -171,7 +177,6 @@ def team_detail(team_id):
         print(f"Errore team detail: {e}")
         return redirect(url_for('index'))
 
-
 @app.route('/standings')
 def standings():
     """Classifica del campionato"""
@@ -190,11 +195,21 @@ def stats():
     Recupera i dati necessari dal database e li passa al template.
     """
     try:
+        # Recupera un dizionario di tutti i nomi delle squadre per un accesso efficiente
+        teams_dict = {team.id: team.name for team in Team.query.all()}
+        
         # Statistiche generali
         total_matches = Match.query.count()
         total_teams = Team.query.count()
-        total_goals_sum = db.session.query(func.sum(Match.home_score) + func.sum(Match.away_score)).scalar()
+        all_matches = Match.query.all()
+        
+        # Calcola la somma totale dei gol effettivi e dei punti
+        total_goals_sum = sum(match.home_goals + match.away_goals for match in all_matches)
+        total_points_sum = sum(match.home_score + match.away_score for match in all_matches)
+
+        # Calcola le medie
         avg_goals_per_match = (total_goals_sum / total_matches) if total_matches > 0 else 0
+        avg_points_per_match = (total_points_sum / total_matches) if total_matches > 0 else 0
         
         gameweek_stats_raw = db.session.query(
             Match.gameweek,
@@ -227,8 +242,8 @@ def stats():
         # Converte gli oggetti Match in dizionari per il template
         spectacular_matches = [
             {
-                'home_team': match.home_team_obj.name,
-                'away_team': match.away_team_obj.name,
+                'home_team': match.home_team, 
+                'away_team': match.away_team, 
                 'home_score': match.home_score,
                 'away_score': match.away_score,
                 'gameweek': match.gameweek,
@@ -236,23 +251,59 @@ def stats():
             } for match in high_scoring_matches
         ]
         
+        # Statistiche individuali
+        top_scorers = Player.query.order_by(Player.goals.desc()).limit(10).all()
+        top_assisters = Player.query.order_by(Player.assists.desc()).limit(10).all()
+        best_goalkeepers = Player.query.filter_by(is_goalkeeper=True).order_by(Player.clean_sheets.desc()).limit(5).all()
+        
+        # Nuove query per i top e flop fantavoto
+        top_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(desc(PlayerStat.fantavoto)).limit(5).all()
+        flop_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(PlayerStat.fantavoto.asc()).limit(5).all()
+
         return render_template(
             'stats.html',
             total_matches=total_matches,
             total_teams=total_teams,
             avg_goals_per_match=avg_goals_per_match,
+            avg_points_per_match=avg_points_per_match,
             gameweek_stats=gameweek_stats,
             teams=teams,
             top_team=top_team,
             top_scorer_team=top_scorer_team,
             best_defense=best_defense,
-            high_scoring_matches=spectacular_matches
+            high_scoring_matches=spectacular_matches,
+            top_scorers=top_scorers,
+            top_assisters=top_assisters,
+            best_goalkeepers=best_goalkeepers,
+            top_fantavoto_players=top_fantavoto_players,
+            flop_fantavoto_players=flop_fantavoto_players
         )
 
     except Exception as e:
-        # Gestione degli errori, puoi reindirizzare a una pagina di errore
+        # Gestione degli errori
         print(f"Errore nella route stats: {e}")
         return render_template('errors/500.html'), 500
+
+@app.route('/player/<int:player_id>')
+def player_stats(player_id):
+    """
+    Gestisce la pagina delle statistiche di un singolo giocatore.
+    """
+    player = Player.query.get_or_404(player_id)
+    player_stats = PlayerStat.query.filter_by(player_id=player_id).order_by(PlayerStat.fantavoto.desc()).all()
+    
+    # Calcola la media fantavoto del giocatore
+    if player_stats:
+        avg_fantavoto = sum(stat.fantavoto for stat in player_stats) / len(player_stats)
+    else:
+        avg_fantavoto = 0
+
+    return render_template(
+        'player_stats.html',
+        player=player,
+        player_stats=player_stats,
+        avg_fantavoto=avg_fantavoto
+    )
 
 # ===== ADMIN ROUTES =====
 @app.route('/admin')

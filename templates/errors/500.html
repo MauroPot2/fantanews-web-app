@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container text-center py-5">
+<h1 class="display-1 text-danger">500</h1>
+<h2 class="mb-4">Errore Interno del Server</h2>
+<p class="lead">Qualcosa è andato storto. Non preoccuparti, il nostro team sta già lavorando per risolvere il problema.</p>
+<a href="{{ url_for('stats') }}" class="btn btn-primary mt-3">Torna alla Pagina Statistiche</a>
+</div>
+{% endblock %}

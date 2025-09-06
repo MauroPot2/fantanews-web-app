@@ -3,51 +3,37 @@
 
 {% block content %}
 <div class="container py-5">
-    <h1 class="text-center mb-5">Squadre Fanta Grimaldi</h1>
-    
+    <h1 class="text-center mb-5">Squadre e Rose</h1>
+
     {% if teams %}
-    <div class="row">
-        {% for team in teams %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ team.name }}</h5>
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <strong>{{ team.points }}</strong>
-                            <br><small class="text-muted">Punti</small>
-                        </div>
-                        <div class="col-6">
-                            <strong>{{ team.matches_played }}</strong>
-                            <br><small class="text-muted">Partite</small>
-                        </div>
+        <div class="row g-4">
+            {% for team in teams %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">{{ team.name }}</h5>
                     </div>
-                    <hr>
-                    <div class="row text-center small">
-                        <div class="col-4">
-                            <span class="text-success">{{ team.wins }}V</span>
-                        </div>
-                        <div class="col-4">
-                            <span class="text-warning">{{ team.draws }}N</span>
-                        </div>
-                        <div class="col-4">
-                            <span class="text-danger">{{ team.losses }}P</span>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <a href="{{ url_for('team_detail', team_name=team.name) }}" 
-                           class="btn btn-outline-primary btn-sm">Dettagli</a>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Giocatori:</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for player in team.players %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ player.name }}</span>
+                                    <a href="{{ url_for('player_stats', player_id=player.id) }}" class="btn btn-sm btn-outline-primary">Statistiche</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
     {% else %}
-    <div class="text-center">
-        <p class="text-muted">Nessuna squadra ancora registrata.</p>
-        <a href="{{ url_for('admin') }}" class="btn btn-primary">Carica Prima Giornata</a>
-    </div>
+        <p class="text-center text-muted">Nessuna squadra disponibile.</p>
     {% endif %}
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('stats') }}" class="btn btn-secondary">Torna alle Statistiche</a>
+    </div>
 </div>
 {% endblock %}
