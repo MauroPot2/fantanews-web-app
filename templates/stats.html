@@ -214,7 +214,7 @@
                                         <td>{{ loop.index }}</td>
                                         <td>{{ player.name }}</td>
                                         <td>{{ player.team.name }}</td>
-                                        <td>{{ "%.1f"|format(player.fantavoto) }}</td>
+                                        <td>{{ "%.1f"|format(player.fanta_vote) }}</td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}
@@ -253,7 +253,7 @@
                                         <td>{{ loop.index }}</td>
                                         <td>{{ player.name }}</td>
                                         <td>{{ player.team.name }}</td>
-                                        <td>{{ "%.1f"|format(player.fantavoto) }}</td>
+                                        <td>{{ "%.1f"|format(player.fanta_vote) }}</td>
                                     </tr>
                                     {% endfor %}
                                 {% else %}

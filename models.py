@@ -99,8 +99,16 @@ class PlayerStat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     player_id = db.Column(db.Integer, db.ForeignKey('player.id'))
     match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
-    fantavoto = db.Column(db.Float, nullable=False)
-    
+    is_starter = db.Column(db.Boolean, default=True)
+    vote = db.Column(db.Float, nullable=True)  # Voto in pagella
+    fanta_vote = db.Column(db.Float, nullable=True)
+    goals = db.Column(db.Integer, default=0)
+    assists = db.Column(db.Integer, default=0)
+    clean_sheet = db.Column(db.Integer, default=0)
+
     # Relazioni con i modelli Player e Match
     player = db.relationship('Player', backref=db.backref('stats', lazy=True))
     match = db.relationship('Match', backref=db.backref('player_stats', lazy=True))
+    
+    def __repr__(self):
+        return f"<PlayerStat {self.player.name} - Match: {self.match.gameweek} - Fantavoto: {self.fantavoto}>"

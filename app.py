@@ -10,10 +10,13 @@ from datetime import datetime, timedelta
 from flask import Flask, request, render_template, redirect, url_for, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
+from flask_migrate import Migrate
 
 load_dotenv()
 from extensions import db  # Importa l'istanza db da extensions.py
 from models import Match, Article, Team, PlayerStat, Player
+from utils.excel_parser import ExcelParser
+from utils.perplexity_client import PerplexityClient
 
 # ===== INIZIALIZZAZIONE APP =====
 app = Flask(__name__)
@@ -29,6 +32,7 @@ app.config['PERPLEXITY_API_KEY'] = os.getenv('PERPLEXITY_API_KEY')
 app.config['PERPLEXITY_BASE_URL'] = os.getenv('PERPLEXITY_BASE_URL', 'https://api.perplexity.ai/chat/completions')
 
 db.init_app(app)
+migrate = Migrate(app, db)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
@@ -284,26 +288,64 @@ def stats():
         print(f"Errore nella route stats: {e}")
         return render_template('errors/500.html'), 500
 
-@app.route('/player/<int:player_id>')
-def player_stats(player_id):
-    """
-    Gestisce la pagina delle statistiche di un singolo giocatore.
-    """
-    player = Player.query.get_or_404(player_id)
-    player_stats = PlayerStat.query.filter_by(player_id=player_id).order_by(PlayerStat.fantavoto.desc()).all()
-    
-    # Calcola la media fantavoto del giocatore
-    if player_stats:
-        avg_fantavoto = sum(stat.fantavoto for stat in player_stats) / len(player_stats)
-    else:
-        avg_fantavoto = 0
+@app.route('/api/top-scorers')
+def api_top_scorers():
+    """Restituisce i migliori marcatori in formato JSON."""
+    top_players = db.session.query(Player, func.sum(PlayerStat.goals).label('total_goals')) \
+        .join(PlayerStat) \
+        .group_by(Player.id) \
+        .order_by(desc('total_goals')) \
+        .limit(10).all()
+        
+    results = []
+    for player, total_goals in top_players:
+        results.append({
+            'name': player.name,
+            'goals': total_goals,
+            'player_id': player.id,
+            'team': player.team.name if player.team else 'Sconosciuto'
+        })
+    return jsonify(results)
 
-    return render_template(
-        'player_stats.html',
-        player=player,
-        player_stats=player_stats,
-        avg_fantavoto=avg_fantavoto
-    )
+@app.route('/api/top-assists')
+def api_top_assists():
+    """Restituisce i migliori assistman in formato JSON."""
+    top_players = db.session.query(Player, func.sum(PlayerStat.assists).label('total_assists')) \
+        .join(PlayerStat) \
+        .group_by(Player.id) \
+        .order_by(desc('total_assists')) \
+        .limit(10).all()
+        
+    results = []
+    for player, total_assists in top_players:
+        results.append({
+            'name': player.name,
+            'assists': total_assists,
+            'player_id': player.id,
+            'team': player.team.name if player.team else 'Sconosciuto'
+        })
+    return jsonify(results)
+
+@app.route('/player/<int:player_id>')
+def player_stats_page(player_id):
+    """Renderizza la pagina delle statistiche del giocatore con i dati Jinja."""
+    player = Player.query.options(joinedload(Player.team)).get_or_404(player_id)
+    
+    player_stats_list = PlayerStat.query.filter_by(player_id=player_id).order_by(PlayerStat.match_id.desc()).all()
+    
+    # Calcolo delle statistiche aggregate
+    total_goals = sum(s.goals for s in player_stats_list if s.goals is not None)
+    total_assists = sum(s.assists for s in player_stats_list if s.assists is not None)
+    
+    fanta_votes = [s.fanta_vote for s in player_stats_list if s.fanta_vote is not None]
+    average_fanta_vote = sum(fanta_votes) / len(fanta_votes) if fanta_votes else 0
+
+    return render_template('player_stats.html', 
+                           player=player, 
+                           player_stats=player_stats_list,
+                           total_goals=total_goals,
+                           total_assists=total_assists,
+                           average_fanta_vote=average_fanta_vote)
 
 # ===== ADMIN ROUTES =====
 @app.route('/admin')
@@ -446,22 +488,178 @@ def clear_database():
         admin_logger.log('error', f'❌ Errore pulizia database: {str(e)}')
         return jsonify({'success': False, 'message': f'Errore: {str(e)}'})
 
+@app.route('/submit_match', methods=['POST'])
+def submit_match():
+    """
+    Gestisce l'invio e l'elaborazione dei dati di una partita.
+    """
+    data = request.json
+    try:
+        # Recupera le squadre
+        home_team = Team.query.filter_by(name=data['home_team_name']).first()
+        away_team = Team.query.filter_by(name=data['away_team_name']).first()
+        if not home_team or not away_team:
+            return jsonify({'success': False, 'message': 'Squadra non trovata'}), 404
+
+        # Aggiunge una nuova partita
+        new_match = Match(
+            home_team=home_team.name,
+            away_team=away_team.name,
+            home_score=data['home_score'],
+            away_score=data['away_score'],
+            gameweek=data['gameweek'],
+            date_played=datetime.utcnow()
+        )
+        db.session.add(new_match)
+        db.session.flush()  # Ottiene l'ID del match prima del commit
+
+        # Aggiorna le statistiche di squadra
+        home_team.matches_played += 1
+        away_team.matches_played += 1
+        home_team.points_for += data['home_score']
+        away_team.points_for += data['away_score']
+        home_team.points_against += data['away_score']
+        away_team.points_against += data['home_score']
+
+        home_goals = new_match.home_goals
+        away_goals = new_match.away_goals
+        home_team.goals_for += home_goals
+        home_team.goals_against += away_goals
+        away_team.goals_for += away_goals
+        away_team.goals_against += home_goals
+
+        if home_goals > away_goals:
+            home_team.wins += 1
+            away_team.losses += 1
+        elif away_goals > home_goals:
+            away_team.wins += 1
+            home_team.losses += 1
+        else:
+            home_team.draws += 1
+            away_team.draws += 1
+
+        # Aggiorna le statistiche individuali dei giocatori
+        for player_data in data.get('players', []):
+            player = Player.query.filter_by(name=player_data['name']).first()
+            if player:
+                new_stat = PlayerStat(
+                    player_id=player.id,
+                    match_id=new_match.id,
+                    fantavoto=player_data['fantavoto']
+                )
+                db.session.add(new_stat)
+                
+                # Aggiorna i gol/assist/clean sheets
+                if 'goals' in player_data:
+                    player.goals += player_data['goals']
+                if 'assists' in player_data:
+                    player.assists += player_data['assists']
+                if player.is_goalkeeper and player_data.get('clean_sheet', False):
+                    player.clean_sheets += 1
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Partita elaborata con successo!'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Errore nell'elaborazione del tabellino: {e}")
+        return jsonify({'success': False, 'message': f"Errore: {str(e)}"}), 500
 # ===== PROCESSO BACKGROUND =====
-def process_matches_with_logging(filepath, gameweek, generate_articles=True, update_standings=True, overwrite_duplicates=False):
-    """Processo background con log dettagliato"""
+def get_or_create_team_and_player(db_session, team_name, player_name):
+    """
+    Trova o crea un team e un giocatore.
+    """
+    team = Team.query.filter_by(name=team_name).first()
+    if not team:
+        team = Team(name=team_name)
+        db_session.add(team)
+        db_session.flush() # Per ottenere l'ID prima del commit
+        admin_logger.log('info', f'➕ Creato nuovo team: {team_name}')
     
+    player = Player.query.filter_by(name=player_name, team_id=team.id).first()
+    if not player:
+        is_goalkeeper = 'P' in player_name.upper()
+        player = Player(name=player_name, team_id=team.id, is_goalkeeper=is_goalkeeper)
+        db_session.add(player)
+        db_session.flush() # Per ottenere l'ID prima del commit
+        admin_logger.log('info', f'➕ Creato nuovo giocatore: {player_name} ({team_name})')
+        
+    return team, player
+
+def process_player_stats(db_session, saved_matches_data):
+    """
+    Elabora e salva le statistiche individuali dei giocatori.
+    """
+    admin_logger.log('info', '📊 Iniziando salvataggio statistiche giocatori...')
+    
+    for match, match_data in saved_matches_data:
+        # Processa giocatori della squadra di casa
+        for player_data in match_data.get('home_players', []) + match_data.get('home_bench', []):
+            team, player = get_or_create_team_and_player(db_session, match_data['home_team'], player_data['name'])
+            
+            # Calcolo clean sheet per i portieri
+            is_clean_sheet = False
+            if player.is_goalkeeper:
+                if match_data['away_score'] == 0:
+                    is_clean_sheet = True
+            
+            # Sostituisci esplicitamente i valori None con 0.0
+            player_vote = player_data.get('vote')
+            player_fanta_vote = player_data.get('fanta_vote')
+            
+            player_stat = PlayerStat(
+                match_id=match.id,
+                player_id=player.id,
+                is_starter=player_data in match_data.get('home_players', []),
+                vote=player_vote if player_vote is not None else 0.0,
+                fanta_vote=player_fanta_vote if player_fanta_vote is not None else 0.0,
+                goals=player_data.get('stats', {}).get('goals', 0),
+                assists=player_data.get('stats', {}).get('assists', 0),
+                clean_sheet=is_clean_sheet
+            )
+            db_session.add(player_stat)
+            
+        # Processa giocatori della squadra in trasferta
+        for player_data in match_data.get('away_players', []) + match_data.get('away_bench', []):
+            team, player = get_or_create_team_and_player(db_session, match_data['away_team'], player_data['name'])
+            
+            # Calcolo clean sheet per i portieri
+            is_clean_sheet = False
+            if player.is_goalkeeper:
+                if match_data['home_score'] == 0:
+                    is_clean_sheet = True
+
+            # Sostituisci esplicitamente i valori None con 0.0
+            player_vote = player_data.get('vote')
+            player_fanta_vote = player_data.get('fanta_vote')
+
+            player_stat = PlayerStat(
+                match_id=match.id,
+                player_id=player.id,
+                is_starter=player_data in match_data.get('away_players', []),
+                vote=player_vote if player_vote is not None else 0.0,
+                fanta_vote=player_fanta_vote if player_fanta_vote is not None else 0.0,
+                goals=player_data.get('stats', {}).get('goals', 0),
+                assists=player_data.get('stats', {}).get('assists', 0),
+                clean_sheet=is_clean_sheet
+            )
+            db_session.add(player_stat)
+    
+    admin_logger.log('success', '📊 Statistiche giocatori salvate con successo.')
+
+def process_matches_with_logging(filepath, gameweek, generate_articles=True, update_standings=True, overwrite_duplicates=False):
+    """
+    Processo background con log dettagliato
+    Questa è la tua funzione originale, integrata e aggiornata.
+    """
     try:
         with app.app_context():
             
             # ===== STEP 1: PARSING =====
             admin_logger.log('info', '🔍 Iniziando parsing del file Excel...')
             
-            from utils.excel_parser import ExcelParser
             parser = ExcelParser(filepath)
             matches_data = parser.parse_matches()
-
-            for match_data in matches_data:
-                print("HOME", match_data['home_players'][:2])
 
             if not matches_data:
                 admin_logger.log('error', '❌ Nessuna partita trovata nel file Excel')
@@ -477,20 +675,20 @@ def process_matches_with_logging(filepath, gameweek, generate_articles=True, upd
                 admin_logger.log('info', f'⚙️ Processing partita {i+1}: {original_match.get("home_team")} vs {original_match.get("away_team")}')
                 
                 processed_match = {
-                    'id': original_match.get('id'),                           # Id partita se disponibile
+                    'id': original_match.get('id'), # Id partita se disponibile
                     'home_team': original_match.get('home_team', 'Sconosciuto'),
                     'away_team': original_match.get('away_team', 'Sconosciuto'),
-                    'home_score': original_match.get('home_score', 0),         # Gol reali o punteggio reale, coerente con DB
+                    'home_score': original_match.get('home_score', 0), # Gol reali o punteggio reale, coerente con DB
                     'away_score': original_match.get('away_score', 0),
-                    'home_total': float(original_match.get('home_total', 0.0)),       # Punteggio fantacalcio complessivo
+                    'home_total': float(original_match.get('home_total', 0.0)), # Punteggio fantacalcio complessivo
                     'away_total': float(original_match.get('away_total', 0.0)),
                     'gameweek': int(gameweek),
                     'home_formation_code': original_match.get('home_formation_code', ''),
                     'away_formation_code': original_match.get('away_formation_code', ''),
-                    'home_players': original_match.get('home_players', []),    # Lista dizionari giocatori titolari casa
-                    'away_players': original_match.get('away_players', []),    # Lista dizionari giocatori titolari trasferta
-                    'home_bench': original_match.get('home_bench', []),        # Lista dizionari panchina casa
-                    'away_bench': original_match.get('away_bench', []),        # Lista dizionari panchina trasferta
+                    'home_players': original_match.get('home_players', []), # Lista dizionari giocatori titolari casa
+                    'away_players': original_match.get('away_players', []), # Lista dizionari giocatori titolari trasferta
+                    'home_bench': original_match.get('home_bench', []), # Lista dizionari panchina casa
+                    'away_bench': original_match.get('away_bench', []), # Lista dizionari panchina trasferta
                     'home_modifiers': original_match.get('home_modifiers', {}),# Modificatori casa (bonus/malus)
                     'away_modifiers': original_match.get('away_modifiers', {}),# Modificatori trasferta
                     'home_timestamp': original_match.get('home_timestamp', ''),
@@ -546,26 +744,31 @@ def process_matches_with_logging(filepath, gameweek, generate_articles=True, upd
             db.session.commit()
             admin_logger.log('success', f'💾 Database aggiornato: {len(saved_matches)} partite salvate, {duplicate_count} duplicate')
             
-            # ===== STEP 4: ARTICOLI AI =====
+            # ===== STEP 4: SALVATAGGIO STATISTICHE GIOCATORI =====
+            if saved_matches:
+                try:
+                    process_player_stats(db.session, saved_matches)
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    admin_logger.log('error', f'⚠️ Errore salvataggio statistiche giocatori: {str(e)}')
+            
+            # ===== STEP 5: ARTICOLI AI =====
             articles_generated = 0
             if generate_articles and saved_matches:
                 admin_logger.log('info', '🤖 Iniziando generazione articoli AI...')
                 
                 try:
-                    from utils.perplexity_client import PerplexityClient
                     perplexity = PerplexityClient()
 
                     for i, (match, match_data) in enumerate(saved_matches):
-
                         try:
                             article_content = perplexity.generate_article(match_data)
-
                             article = Article(
                                 match_id=match.id,
                                 title=f"{match.home_team} vs {match.away_team}: Cronaca e Analisi",
                                 content=article_content
                             )
-                            
                             db.session.add(article)
                             articles_generated += 1
                             admin_logger.log('success', f'✅ Articolo generato per {match.home_team} vs {match.away_team}')
@@ -590,7 +793,7 @@ def process_matches_with_logging(filepath, gameweek, generate_articles=True, upd
             else:
                 admin_logger.log('info', '📰 Generazione articoli saltata')
             
-            # ===== STEP 5: CLASSIFICA =====
+            # ===== STEP 6: CLASSIFICA =====
             if update_standings:
                 admin_logger.log('info', '📊 Aggiornando classifica...')
                 
@@ -611,6 +814,10 @@ def process_matches_with_logging(filepath, gameweek, generate_articles=True, upd
         admin_logger.log('error', f'💥 ERRORE GENERALE: {str(e)}')
         import traceback
         admin_logger.log('error', f'🔍 Stack trace: {traceback.format_exc()}')
+    finally:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            admin_logger.log('info', f'🗑️ File temporaneo {filepath} cancellato.')
 
 # ===== ERROR HANDLERS =====
 @app.errorhandler(404)

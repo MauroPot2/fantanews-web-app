@@ -17,19 +17,19 @@
             <div class="row text-center mb-5 g-4">
                 <div class="col-md-4">
                     <div class="card p-3 h-100">
-                        <h2 class="text-primary">{{ player.goals }}</h2>
+                        <h2 class="text-primary">{{ total_goals }}</h2>
                         <p class="card-text">Gol Totali</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="card p-3 h-100">
-                        <h2 class="text-success">{{ player.assists }}</h2>
+                        <h2 class="text-success">{{ total_assists }}</h2>
                         <p class="card-text">Assist Totali</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="card p-3 h-100">
-                        <h2 class="text-info">{{ "%.2f"|format(avg_fantavoto) }}</h2>
+                        <h2 class="text-info">{{ "%.1f"|format(average_fanta_vote) }}</h2>
                         <p class="card-text">Media Fantavoto</p>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
                         {% for stat in player_stats %}
                         <tr>
                             <td>{{ stat.match.gameweek }}</td>
-                            <td>{{ "%.1f"|format(stat.fantavoto) }}</td>
+                            <td>{{ "%.1f"|format(stat.fanta_vote) }}</td>
                             <td>{{ stat.match.home_team }} - {{ stat.match.away_team }}</td>
                         </tr>
                         {% endfor %}
