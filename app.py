@@ -17,6 +17,7 @@ from extensions import db  # Importa l'istanza db da extensions.py
 from models import Match, Article, Team, PlayerStat, Player
 from utils.excel_parser import ExcelParser
 from utils.perplexity_client import PerplexityClient
+from utils.fantacalcio_utils import points_to_goals
 
 # ===== INIZIALIZZAZIONE APP =====
 app = Flask(__name__)
@@ -208,7 +209,7 @@ def stats():
         all_matches = Match.query.all()
         
         # Calcola la somma totale dei gol effettivi e dei punti
-        total_goals_sum = sum(match.home_goals + match.away_goals for match in all_matches)
+        total_goals_sum = sum(points_to_goals(match.home_score) + points_to_goals(match.away_score) for match in all_matches)
         total_points_sum = sum(match.home_score + match.away_score for match in all_matches)
 
         # Calcola le medie
@@ -261,8 +262,8 @@ def stats():
         best_goalkeepers = Player.query.filter_by(is_goalkeeper=True).order_by(Player.clean_sheets.desc()).limit(5).all()
         
         # Nuove query per i top e flop fantavoto
-        top_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(desc(PlayerStat.fantavoto)).limit(5).all()
-        flop_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(PlayerStat.fantavoto.asc()).limit(5).all()
+        top_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(desc(PlayerStat.fanta_vote)).limit(5).all()
+        flop_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(PlayerStat.fanta_vote.asc()).limit(5).all()
 
         return render_template(
             'stats.html',
@@ -327,7 +328,7 @@ def api_top_assists():
     return jsonify(results)
 
 @app.route('/player/<int:player_id>')
-def player_stats_page(player_id):
+def player_stats(player_id):
     """Renderizza la pagina delle statistiche del giocatore con i dati Jinja."""
     player = Player.query.options(joinedload(Player.team)).get_or_404(player_id)
     
