@@ -11,6 +11,7 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify, R
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from flask_migrate import Migrate
+from collections import defaultdict
 
 load_dotenv()
 from extensions import db  # Importa l'istanza db da extensions.py
@@ -18,6 +19,21 @@ from models import Match, Article, Team, PlayerStat, Player
 from utils.excel_parser import ExcelParser
 from utils.perplexity_client import PerplexityClient
 from utils.fantacalcio_utils import points_to_goals
+
+ROLE_MAP = {
+    'Por': 'Portiere',
+    'Ds': 'Difensore',
+    'Dd': 'Difensore',
+    'Dc': 'Difensore',
+    'B': 'Braccetto',
+    'E': 'Centrocampista',
+    'M': 'Centrocampista',
+    'C': 'Centrocampista',
+    'W': 'Fascia',
+    'T': 'Trequartista',
+    'A': 'Attaccante',
+    'Pc': 'Attaccante',
+}
 
 # ===== INIZIALIZZAZIONE APP =====
 app = Flask(__name__)
@@ -98,6 +114,8 @@ def index():
                              total_articles=0,
                              latest_gameweek=None)
 
+# Nel tuo file app.py
+
 @app.route('/matches')
 def matches():
     """Lista partite con paginazione e filtri"""
@@ -114,10 +132,15 @@ def matches():
         error_out=False
     )
     
+    # Carica tutte le squadre e crea un dizionario per un accesso rapido
+    teams = Team.query.all()
+    teams_map = {team.name: team for team in teams}
+    
     return render_template('matches.html', 
                          matches=pagination.items, 
                          pagination=pagination,
-                         selected_gameweek=gameweek)
+                         selected_gameweek=gameweek,
+                         teams_map=teams_map)
 
 @app.route('/matches/<int:match_id>')
 def match_detail(match_id):
@@ -160,35 +183,61 @@ def article_detail(article_id):
 
 @app.route('/teams')
 def teams():
-    teams_with_players = Team.query.options(joinedload(Team.players)).order_by(Team.name).all()
-    return render_template('teams.html', teams=teams_with_players)
+    all_teams = Team.query.options(joinedload(Team.players)).all()
+    
+    # Raggruppa i giocatori di ogni squadra per ruolo
+    for team in all_teams:
+        players_by_role = defaultdict(list)
+        for player in team.players:
+            # Assumi che 'Ruolo' sia un campo del modello Player
+            if player.role:
+                players_by_role[player.role].append(player)
+        
+        # Ordina i giocatori all'interno di ogni ruolo
+        for role in players_by_role:
+            players_by_role[role].sort(key=lambda p: p.name) # Ordine alfabetico per nome
+            
+        team.players_by_role = players_by_role
+        
+    return render_template('teams.html', teams=all_teams)
 
 @app.route('/teams/<int:team_id>')
-def team_detail(team_id):
-    """Pagina dettaglio di una squadra"""
-    try:
-        # Recupera la squadra dal database
-        team = Team.query.get_or_404(team_id)
-        
-        # Trova tutte le partite della squadra
-        home_matches = Match.query.filter_by(home_team=team.name).all()
-        away_matches = Match.query.filter_by(away_team=team.name).all()
-        
-        return render_template('team_detail.html', 
-                             team=team,
-                             home_matches=home_matches,
-                             away_matches=away_matches)
-    except Exception as e:
-        print(f"Errore team detail: {e}")
-        return redirect(url_for('index'))
+def team_roster(team_id):
+    """
+    Mostra la rosa e le statistiche di una squadra specifica,
+    raggruppando i giocatori per ruolo.
+    """
+    # Trova la squadra e carica i suoi giocatori in una sola query
+    team = Team.query.options(joinedload(Team.players)).get_or_404(team_id)
+
+    # ✅ Dizionario per raggruppare i giocatori per ruolo
+    players_by_role = defaultdict(list)
+    
+    # Itera sui giocatori della squadra e li raggruppa per il ruolo completo
+    for player in team.players:
+        if player.role:
+            players_by_role[player.role].append(player)
+
+    # Ordina i giocatori all'interno di ogni ruolo alfabeticamente per nome
+    for role in players_by_role:
+        players_by_role[role].sort(key=lambda p: p.name)
+    
+    team.players_by_role = players_by_role
+    # ✅ Restituisce il template con i dati della squadra e la rosa raggruppata
+    return render_template('team_roster.html', team=team, players_by_role=players_by_role)
 
 @app.route('/standings')
 def standings():
     """Classifica del campionato"""
     try:
         from utils.calculate_standings import calculate_standings
-        standings_data = calculate_standings()
-        return render_template('standings.html', standings=standings_data)
+        data = calculate_standings()
+        
+        return render_template('standings.html', 
+                               standings=data['standings'],
+                               best_attack=data['best_attack'],
+                               best_defense=data['best_defense'],
+                               most_wins=data['most_wins'])
     except Exception as e:
         print(f"Errore classifica: {e}")
         return render_template('standings.html', standings=[])
@@ -339,14 +388,28 @@ def player_stats(player_id):
     total_assists = sum(s.assists for s in player_stats_list if s.assists is not None)
     
     fanta_votes = [s.fanta_vote for s in player_stats_list if s.fanta_vote is not None]
-    average_fanta_vote = sum(fanta_votes) / len(fanta_votes) if fanta_votes else 0
+
+    # Parametri per la media bayesiana
+    # Media a priori (media di tutti i fantavoti della lega), basata su un esempio di fantamedia per vincere [3]
+    m_prior = 6
+    # Costante di confidenza (determina il peso della media a priori), un valore suggerito è tra 8 e 12 [1, 2]
+    c_confidence = 10
+
+    # Calcolo della media bayesiana ( (C * m + somma voti reali) / (C + numero voti reali) )
+    if fanta_votes:
+        sum_fanta_votes = sum(fanta_votes)
+        n_votes = len(fanta_votes)
+        bayesian_fanta_vote_average = (c_confidence * m_prior + sum_fanta_votes) / (c_confidence + n_votes)
+    else:
+        bayesian_fanta_vote_average = 0
 
     return render_template('player_stats.html', 
                            player=player, 
                            player_stats=player_stats_list,
+                           fanta_votes=fanta_votes,
                            total_goals=total_goals,
                            total_assists=total_assists,
-                           average_fanta_vote=average_fanta_vote)
+                           bayesian_fanta_vote_average=bayesian_fanta_vote_average)
 
 # ===== ADMIN ROUTES =====
 @app.route('/admin')
@@ -566,10 +629,11 @@ def submit_match():
         print(f"Errore nell'elaborazione del tabellino: {e}")
         return jsonify({'success': False, 'message': f"Errore: {str(e)}"}), 500
 # ===== PROCESSO BACKGROUND =====
-def get_or_create_team_and_player(db_session, team_name, player_name):
+def get_or_create_team_and_player(db_session, team_name, player_name, player_data):
     """
     Trova o crea un team e un giocatore.
     """
+  # Importa qui per evitare dipendenze circolari
     team = Team.query.filter_by(name=team_name).first()
     if not team:
         team = Team(name=team_name)
@@ -578,12 +642,34 @@ def get_or_create_team_and_player(db_session, team_name, player_name):
         admin_logger.log('info', f'➕ Creato nuovo team: {team_name}')
     
     player = Player.query.filter_by(name=player_name, team_id=team.id).first()
+    
+    # ✅ Logica per gestire i ruoli multipli
+    player_roles = player_data.get('role', '').split(';')
+    main_role = None
+    
+    # Trova il primo ruolo valido nella mappa
+    for role_code in player_roles:
+        role_code = role_code.strip()
+        if role_code in ROLE_MAP:
+            main_role = ROLE_MAP[role_code]
+            break
+            
+    is_goalkeeper = 'Por' in player_roles # Verifica se è un portiere
+
     if not player:
-        is_goalkeeper = 'P' in player_name.upper()
-        player = Player(name=player_name, team_id=team.id, is_goalkeeper=is_goalkeeper)
+        player = Player(
+            name=player_name, 
+            team_id=team.id, 
+            is_goalkeeper=is_goalkeeper,
+            role=main_role  # ✅ Usa il ruolo categorizzato
+        )
         db_session.add(player)
-        db_session.flush() # Per ottenere l'ID prima del commit
-        admin_logger.log('info', f'➕ Creato nuovo giocatore: {player_name} ({team_name})')
+        db_session.flush()
+        admin_logger.log('info', f'➕ Creato nuovo giocatore: {player_name} ({team_name}) con ruolo: {main_role}')
+    else:
+        # ✅ Aggiorna il ruolo se il giocatore esiste
+        player.role = main_role
+        player.is_goalkeeper = is_goalkeeper
         
     return team, player
 
@@ -596,7 +682,7 @@ def process_player_stats(db_session, saved_matches_data):
     for match, match_data in saved_matches_data:
         # Processa giocatori della squadra di casa
         for player_data in match_data.get('home_players', []) + match_data.get('home_bench', []):
-            team, player = get_or_create_team_and_player(db_session, match_data['home_team'], player_data['name'])
+            team, player = get_or_create_team_and_player(db_session, match_data['home_team'], player_data['name'], player_data)
             
             # Calcolo clean sheet per i portieri
             is_clean_sheet = False
@@ -614,15 +700,15 @@ def process_player_stats(db_session, saved_matches_data):
                 is_starter=player_data in match_data.get('home_players', []),
                 vote=player_vote if player_vote is not None else 0.0,
                 fanta_vote=player_fanta_vote if player_fanta_vote is not None else 0.0,
-                goals=player_data.get('stats', {}).get('goals', 0),
-                assists=player_data.get('stats', {}).get('assists', 0),
+                goals=player_data.get('goals', 0),
+                assists=player_data.get('assists', 0),
                 clean_sheet=is_clean_sheet
             )
             db_session.add(player_stat)
             
         # Processa giocatori della squadra in trasferta
         for player_data in match_data.get('away_players', []) + match_data.get('away_bench', []):
-            team, player = get_or_create_team_and_player(db_session, match_data['away_team'], player_data['name'])
+            team, player = get_or_create_team_and_player(db_session, match_data['away_team'], player_data['name'], player_data)
             
             # Calcolo clean sheet per i portieri
             is_clean_sheet = False
@@ -640,8 +726,8 @@ def process_player_stats(db_session, saved_matches_data):
                 is_starter=player_data in match_data.get('away_players', []),
                 vote=player_vote if player_vote is not None else 0.0,
                 fanta_vote=player_fanta_vote if player_fanta_vote is not None else 0.0,
-                goals=player_data.get('stats', {}).get('goals', 0),
-                assists=player_data.get('stats', {}).get('assists', 0),
+                goals=player_data.get('goals', 0),
+                assists=player_data.get('assists', 0),
                 clean_sheet=is_clean_sheet
             )
             db_session.add(player_stat)

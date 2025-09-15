@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="text-center mb-5">Rosa {{ team.name }}</h1>
+    
+    {% if team.logo_url %}
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename=team.logo_url) }}" alt="{{ team.name }} Logo" class="team-logo-lg">
+        </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {# Ordina i ruoli come nel template teams.html #}
+            {% set roles_order = ['Portiere', 'Difensore', 'Braccetto', 'Centrocampista', 'Fascia', 'Trequartista', 'Attaccante'] %}
+            
+            {% for role in roles_order %}
+                {% if team.players_by_role[role] %}
+                    <h5 class="mt-4">{{ role }}</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for player in team.players_by_role[role] %}
+                            {# ✅ Rendi il nome del giocatore un link cliccabile #}
+                            <li class="list-group-item">
+                                <a href="{{ url_for('player_stats', player_id=player.id) }}">
+                                    {{ player.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <a href="{{ url_for('teams') }}" class="btn btn-secondary">Torna a Tutte le Squadre</a>
+    </div>
+</div>
+{% endblock %}

@@ -44,38 +44,6 @@
 
     <!-- Statistiche Top Players e Partite -->
     <div class="row mb-5">
-        <!-- Top Marcatori -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Top Marcatori</h5>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% for player in top_scorers %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="{{ url_for('player_stats', player_id=player.id) }}" class="text-dark">{{ player.name }}</a>
-                        <span class="badge bg-primary rounded-pill">{{ player.goals }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <!-- Top Assist-man -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Top Assist-man</h5>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% for player in top_assisters %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="{{ url_for('player_stats', player_id=player.id) }}" class="text-dark">{{ player.name }}</a>
-                        <span class="badge bg-success rounded-pill">{{ player.assists }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
         <!-- Partite più spettacolari -->
         <div class="col-md-6 mb-4">
             <div class="card shadow-sm h-100">
@@ -108,40 +76,7 @@
                 </ul>
             </div>
         </div>
-        <!-- Flop Fantavoto -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">Flop Fantavoto</h5>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% for stat in flop_fantavoto_players %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="me-auto">{{ stat.player.name }} ({{ stat.player.team.name if stat.player.team else "Senza squadra" }})</span>
-                        <span class="badge bg-danger">{{ "%.1f"|format(stat.fanta_vote) }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <!-- Portieri con più clean sheets -->
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">Portieri con più Clean Sheets</h5>
-                </div>
-                <ul class="list-group list-group-flush">
-                    {% for player in best_goalkeepers %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="{{ url_for('player_stats', player_id=player.id) }}" class="text-dark">{{ player.name }}</a>
-                        <span class="badge bg-secondary rounded-pill">{{ player.clean_sheets }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-    </div>
-    
+
     <hr class="my-5">
 
     <!-- Statistiche per giornata -->
@@ -157,17 +92,19 @@
                                 <tr>
                                     <th>Giornata</th>
                                     <th>Partite</th>
-                                    <th>Totale Gol</th>
+                                    <th>Totale Punti</th>
+                                    <th>Media Punti/Partita</th>
                                     <th>Media Gol/Partita</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for gw, stats in gameweek_stats.items()|sort %}\
+                                {% for gw, stats in gameweek_stats.items()|sort %}
                                 <tr>
                                     <td><strong>{{ gw }}</strong></td>
                                     <td>{{ stats.matches }}</td>
                                     <td>{{ "%.1f"|format(stats.total_goals) }}</td>
-                                    <td>{{ "%.2f"|format(stats.avg_goals) }}</td>
+                                    <td>{{ "%.2f"|format(avg_points_per_match) }}</td>
+                                    <td>{{ "%.2f"|format(avg_goals_per_match) }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

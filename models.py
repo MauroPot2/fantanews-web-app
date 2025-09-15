@@ -22,7 +22,8 @@ class Team(db.Model):
     goals_against = db.Column(db.Integer, default=0, nullable=False)
     points_for = db.Column(db.Float, default=0.0, nullable=False)
     points_against = db.Column(db.Float, default=0.0, nullable=False)
-    
+    logo_url = db.Column(db.String(200), nullable=True)
+
     # Aggiunge la relazione con la classe Player
     players = db.relationship('Player', backref='team', lazy=True)
 
@@ -89,22 +90,23 @@ class Article(db.Model):
 class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id', ondelete='CASCADE'), nullable=False)
     goals = db.Column(db.Integer, default=0)
     assists = db.Column(db.Integer, default=0)
     clean_sheets = db.Column(db.Integer, default=0)
     is_goalkeeper = db.Column(db.Boolean, default=False)
-    
+    role = db.Column(db.String(50), default='Unknown')
+
 class PlayerStat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    player_id = db.Column(db.Integer, db.ForeignKey('player.id'))
-    match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
+    player_id = db.Column(db.Integer, db.ForeignKey('player.id', ondelete='CASCADE'))
+    match_id = db.Column(db.Integer, db.ForeignKey('match.id', ondelete='CASCADE'), nullable=False) # AGGIUNGI CASCADE
     is_starter = db.Column(db.Boolean, default=True)
     vote = db.Column(db.Float, nullable=True)  # Voto in pagella
     fanta_vote = db.Column(db.Float, nullable=True)
     goals = db.Column(db.Integer, default=0)
     assists = db.Column(db.Integer, default=0)
-    clean_sheet = db.Column(db.Integer, default=0)
+    clean_sheet = db.Column(db.Boolean, default=False)
 
     # Relazioni con i modelli Player e Match
     player = db.relationship('Player', backref=db.backref('stats', lazy=True))

@@ -64,8 +64,8 @@
                         <td>{{ team.wins | default(0) }}</td>
                         <td>{{ team.draws | default(0) }}</td>
                         <td>{{ team.losses | default(0) }}</td>
-                        <td>{{ team.goals_for | default(0) }}</td>
-                        <td>{{ team.goals_against | default(0) }}</td>
+                        <td>{{ team.goals_for|int | default(0) }}</td>
+                        <td>{{ team.goals_against|int | default(0) }}</td>
                         <td>{{ "%.1f"|format(team.avg_points_for | default(0)) }}</td>
                         <td>
                             {% set goal_diff = (team.goals_for | default(0.0)) - (team.goals_against | default(0.0)) %}
@@ -84,7 +84,7 @@
                         </td>
                         <td>
                             {% if team.id %}
-                                <a href="{{ url_for('team_detail', team_id=team.id) }}" class="btn btn-sm btn-outline-primary">Dettagli</a>
+                                <a href="{{ url_for('team_roster', team_id=team.id) }}" class="btn btn-sm btn-outline-primary">Dettagli</a>
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
@@ -103,7 +103,7 @@
                     <div class="card-body">
                         <h5>🥅 Miglior Attacco</h5>
                         <h3>{{ best_attack.name | default('N/A') }}</h3>
-                        <p>{{ "%.1f"|format(best_attack.goals_for | default(0)) }} gol segnati</p>
+                        <p>{{ best_attack.goals_for|int | default(0) }} gol segnati</p>
                     </div>
                 </div>
             </div>
@@ -115,7 +115,7 @@
                     <div class="card-body">
                         <h5>🛡️ Miglior Difesa</h5>
                         <h3>{{ best_defense.name | default('N/A') }}</h3>
-                        <p>{{ "%.1f"|format(best_defense.goals_against | default(0)) }} gol subiti</p>
+                        <p>{{ best_defense.goals_against|int | default(0) }} gol subiti</p>
                     </div>
                 </div>
             </div>

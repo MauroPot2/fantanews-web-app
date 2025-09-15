@@ -53,18 +53,37 @@
                 <div class="col-lg-6 col-xl-4">
                     <div class="card h-100 shadow-sm border-0 hover-card">
                         <div class="card-body">
+
+                            <!-- Gameweek -->
+                            <div class="text-center mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    Giornata {{ match.gameweek | default('N/A') }}
+                                </small>
+                            </div>
+                            
                             <!-- Teams -->
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="team-section text-center flex-grow-1">
-                                    <div class="team-icon mb-1">🏠</div>
-                                    <h6 class="fw-bold mb-0 small">{{ match.home_team | default('Casa') }}</h6>
+                                    {% set home_team_obj = teams_map.get(match.home_team) %}
+                                    {% if home_team_obj and home_team_obj.logo_url %}
+                                        <img src="{{ url_for('static', filename=home_team_obj.logo_url) }}" alt="{{ home_team_obj.name }}" class="team-logo mb-1">
+                                    {% else %}
+                                        <div class="team-logo-placeholder bg-light text-dark mb-1">{{ match.home_team[0] }}</div>
+                                    {% endif %}
+                                    <h5 class="fw-bold mb-0 small">{{ match.home_team | default('Casa') }}</h5>
                                 </div>
                                 <div class="vs-section mx-3">
                                     <span class="badge bg-light text-dark">VS</span>
                                 </div>
                                 <div class="team-section text-center flex-grow-1">
-                                    <div class="team-icon mb-1">✈️</div>
-                                    <h6 class="fw-bold mb-0 small">{{ match.away_team | default('Trasferta') }}</h6>
+                                    {% set away_team_obj = teams_map.get(match.away_team) %}
+                                    {% if away_team_obj and away_team_obj.logo_url %}
+                                        <img src="{{ url_for('static', filename=away_team_obj.logo_url) }}" alt="{{ away_team_obj.name }}" class="team-logo mb-1">
+                                    {% else %}
+                                        <div class="team-logo-placeholder bg-light text-dark mb-1">{{ match.away_team[0] }}</div>
+                                    {% endif %}
+                                    <h5 class="fw-bold mb-0 small">{{ match.away_team | default('Trasferta') }}</h5>
                                 </div>
                             </div>
 
@@ -72,7 +91,7 @@
                             <div class="score-section text-center mb-3 p-3 bg-light rounded">
                                 <h3 class="fw-bold text-primary mb-1">{{ home_goals }} - {{ away_goals }}</h3>
                                 <small class="text-muted">
-                                    Fantacalcio: {{ "%.1f"|format(home_score) }} - {{ "%.1f"|format(away_score) }}
+                                    Punteggio {{ "%.1f"|format(home_score) }} - {{ "%.1f"|format(away_score) }}
                                 </small>
                             </div>
 
@@ -93,13 +112,6 @@
                                 {% endif %}
                             </div>
 
-                            <!-- Gameweek -->
-                            <div class="text-center mb-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-calendar-event me-1"></i>
-                                    Giornata {{ match.gameweek | default('N/A') }}
-                                </small>
-                            </div>
 
                             <!-- Action Button -->
                             <div class="d-grid">

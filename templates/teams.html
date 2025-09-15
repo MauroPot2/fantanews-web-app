@@ -1,6 +1,4 @@
-<!-- templates/teams.html -->
 {% extends "base.html" %}
-
 {% block content %}
 <div class="container py-5">
     <h1 class="text-center mb-5">Squadre e Rose</h1>
@@ -9,22 +7,21 @@
         <div class="row g-4">
             {% for team in teams %}
             <div class="col-md-6 col-lg-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">{{ team.name }}</h5>
+                {# ✅ Rendi l'intera card un link #}
+                <a href="{{ url_for('team_roster', team_id=team.id) }}" class="card-link-wrapper">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-primary text-white d-flex align-items-center">
+                            {% if team.logo_url %}
+                                {# ✅ Visualizza lo stemma se presente #}
+                                <img src="{{ url_for('static', filename=team.logo_url) }}" alt="{{ team.name }} Logo" class="team-logo me-3">
+                            {% endif %}
+                            <h5 class="mb-0">{{ team.name }}</h5>
+                        </div>
+                        <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                            <p class="card-text text-muted">Clicca per vedere la rosa completa.</p>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Giocatori:</h6>
-                        <ul class="list-group list-group-flush">
-                            {% for player in team.players %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>{{ player.name }}</span>
-                                    <a href="{{ url_for('player_stats', player_id=player.id) }}" class="btn btn-sm btn-outline-primary">Statistiche</a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
+                </a>
             </div>
             {% endfor %}
         </div>
@@ -32,8 +29,5 @@
         <p class="text-center text-muted">Nessuna squadra disponibile.</p>
     {% endif %}
 
-    <div class="text-center mt-4">
-        <a href="{{ url_for('stats') }}" class="btn btn-secondary">Torna alle Statistiche</a>
-    </div>
 </div>
 {% endblock %}
