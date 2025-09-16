@@ -7,11 +7,12 @@ from dotenv import load_dotenv
 from sqlalchemy import func, desc
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
-from flask import Flask, request, render_template, redirect, url_for, jsonify, Response
+from flask import Flask, request, render_template, redirect, url_for, jsonify, Response, make_response, current_app
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from flask_migrate import Migrate
 from collections import defaultdict
+from functools import wraps
 
 load_dotenv()
 from extensions import db  # Importa l'istanza db da extensions.py
@@ -47,6 +48,8 @@ app.config['MATCHES_PER_PAGE'] = int(os.getenv('MATCHES_PER_PAGE', 10))
 app.config['ARTICLES_PER_PAGE'] = int(os.getenv('ARTICLES_PER_PAGE', 6))
 app.config['PERPLEXITY_API_KEY'] = os.getenv('PERPLEXITY_API_KEY')
 app.config['PERPLEXITY_BASE_URL'] = os.getenv('PERPLEXITY_BASE_URL', 'https://api.perplexity.ai/chat/completions')
+app.config['ADMIN_USERNAME'] = os.getenv('ADMIN_USERNAME', 'admin')
+app.config['ADMIN_PASSWORD'] = os.getenv('ADMIN_PASSWORD', 'password')
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -93,6 +96,14 @@ def allowed_file(filename):
     """Controlla se il file è un Excel valido"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ['xls', 'xlsx']
 
+def auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not (auth.username == current_app.config['ADMIN_USERNAME'] and auth.password == current_app.config['ADMIN_PASSWORD']):
+            return make_response('Non autorizzato', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
+        return f(*args, **kwargs)
+    return decorated
 # ===== ROUTES PRINCIPALI =====
 
 @app.route('/')
@@ -413,6 +424,7 @@ def player_stats(player_id):
 
 # ===== ADMIN ROUTES =====
 @app.route('/admin')
+@auth_required
 def admin():
     """Pannello amministrazione"""
     try:

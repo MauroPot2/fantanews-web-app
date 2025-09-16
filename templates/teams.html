@@ -15,10 +15,10 @@
                                 {# ✅ Visualizza lo stemma se presente #}
                                 <img src="{{ url_for('static', filename=team.logo_url) }}" alt="{{ team.name }} Logo" class="team-logo me-3">
                             {% endif %}
-                            <h5 class="mb-0">{{ team.name }}</h5>
+                            <h5 class="mb-0 text-light">{{ team.name }}</h5>
                         </div>
                         <div class="card-body d-flex flex-column justify-content-center align-items-center">
-                            <p class="card-text text-muted">Clicca per vedere la rosa completa.</p>
+                            <p class="card-text text-light">Clicca per vedere la rosa completa.</p>
                         </div>
                     </div>
                 </a>

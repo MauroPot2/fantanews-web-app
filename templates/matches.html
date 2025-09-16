@@ -4,6 +4,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -151,22 +152,4 @@
     {% endif %}
 </div>
 
-<style>
-.hover-card {
-    transition: all 0.3s ease;
-}
-
-.hover-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.team-icon {
-    font-size: 1.5rem;
-}
-
-.score-section {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-</style>
 {% endblock %}

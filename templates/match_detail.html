@@ -37,7 +37,7 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>⚽ Gol Classici</td>
+                                    <td>⚽ Gol</td>
                                     <td>{{ "%.1f"|format(home_goals) | int }}</td>
                                     <td>{{ "%.1f"|format(away_goals) | int }}</td>
                                     <td>{{ "%.1f"|format(home_goals - away_goals) | int }}</td>
@@ -84,11 +84,6 @@
                         <a href="{{ url_for('matches') }}" class="btn btn-outline-primary">
                             <i class="bi bi-arrow-left me-2"></i>Torna alle Partite
                         </a>
-                        {% if article %}
-                        <a href="{{ url_for('article_detail', article_id=article.id) }}" class="btn btn-outline-success">
-                            <i class="bi bi-newspaper me-2"></i>Leggi Articolo
-                        </a>
-                        {% endif %}
                     </div>
                 </div>
             </div>

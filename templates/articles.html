@@ -4,6 +4,8 @@
 
 {% block head %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
 {% endblock %}
 
 {% block content %}
@@ -159,19 +161,4 @@
         </div>
     {% endif %}
 </div>
-
-<style>
-.hover-article {
-    transition: all 0.3s ease;
-}
-
-.hover-article:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.card-title a:hover {
-    color: var(--bs-primary) !important;
-}
-</style>
 {% endblock %}

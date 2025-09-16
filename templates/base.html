@@ -7,29 +7,12 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+
     {% block head %}{% endblock %}
-    
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .navbar-brand {
-            font-weight: 700;
-        }
-        
-        .nav-link {
-            font-weight: 500;
-        }
-        
-        .bg-gradient-primary {
-            background: var(--primary-gradient);
-        }
-    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">⚽ Fanta Grimaldi</a>
             
@@ -41,22 +24,22 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link" aria-current="page" href="{{ url_for('matches') }}">
-                            <i class="bi bi-trophy-fill me-1"></i>Partite
+                            <i class="bi bi-trophy me-1"></i>Partite
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('standings') }}">
-                            <i class="bi bi-clipboard-data-fill me-1"></i>Classifica
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('articles') }}">
-                            <i class="bi bi-newspaper me-1"></i>Articoli
+                            <i class="bi bi-clipboard-data me-1"></i>Classifica
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('teams') }}">
-                            <i class="bi bi-bar-chart-fill me-1"></i>Squadre
+                            <i class="bi bi-people me-1"></i>Squadre
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('stats') }}">
+                            <i class="bi bi-bar-chart me-1"></i>Statistiche
                         </a>
                     </li>
                 </ul>
