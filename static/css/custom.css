@@ -1,232 +1,703 @@
-/* Stile base e variabili di colore */
+/* =========================
+   FantaGrimaldi UI — Dark Balanced
+   ========================= */
+
+/* ---- Theme tokens ---- */
 :root {
-    --primary-color: #1a237e; /* Blu profondo per titoli e bottoni */
-    --secondary-color: #3f51b5; /* Un tono più chiaro per sfondi scuri */
-    --accent-color: #ffc107; /* Giallo acceso per l'evidenziazione */
-    --text-light: #e0e0e0; /* Grigio chiaro per il testo su sfondo scuro */
-    --text-dark: #212121; /* Grigio scuro per il testo su sfondo chiaro */
-    --bg-dark: #212121;
+  /* Brand */
+  --primary-color: #1a237e;   /* blu profondo */
+  --secondary-color: #3f51b5; /* blu più chiaro */
+  --accent-warn: #8ab4f8;     /* giallo più morbido (non fluo) */
+  --accent-soft: #8ab4f8;     /* highlight UX-friendly (azzurro) */
+
+  /* Surfaces */
+  --bg-dark: #121316;
+  --bg-1: #171a1f;
+  --bg-2: #1d222a;
+  --card-bg: #1a1f27;
+
+  /* Text */
+  --text-light: #e6e8ee;
+  --text-muted: rgba(230,232,238,.72);
+
+  /* Lines / shadows */
+  --border: rgba(255,255,255,.10);
+  --border-2: rgba(255,255,255,.07);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+
+  /* Radius */
+  --r-lg: 16px;
+  --r-md: 12px;
+  --r-sm: 10px;
+
+  /* Motion */
+  --ease: cubic-bezier(.2,.8,.2,1);
 }
 
-/* Stile generale del corpo e dei titoli */
+/* ---- Base ---- */
 body {
-    background-color: var(--bg-dark);
-    color: var(--text-light);
-    font-family: 'Inter', sans-serif;
+  background:
+    radial-gradient(900px 500px at 20% 0%, rgba(63,81,181,.18), transparent 60%),
+    radial-gradient(900px 500px at 80% 10%, rgba(26,35,126,.18), transparent 55%),
+    var(--bg-dark);
+  color: var(--text-light);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
-    color: var(--text-light);
-    font-weight: 600;
+  font-family: Poppins, Inter, system-ui, sans-serif;
+  color: var(--text-light);
+  font-weight: 700;
 }
 
-/* Navbar e footer */
+p, .card-text, .text-muted {
+  color: var(--text-muted) !important;
+}
+
+hr {
+  border-color: var(--border) !important;
+  opacity: 1;
+}
+
+/* ---- Links ---- */
+a {
+  color: var(--accent-soft);
+  text-decoration: none;
+  transition: color .18s var(--ease), opacity .18s var(--ease);
+}
+a:hover {
+  color: #b7cffb;
+  opacity: .95;
+}
+
+/* ---- Navbar ---- */
+.navbar {
+  background: rgba(23,26,31,.75) !important;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+}
+
 .navbar-brand {
-    font-weight: 700;
-    font-size: 1.5rem;
-    color: var(--text-light) !important;
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: var(--text-light) !important;
 }
 
 .nav-link {
-    font-weight: 500;
-    color: var(--text-light) !important;
+  font-weight: 600;
+  color: rgba(230,232,238,.82) !important;
+}
+.nav-link:hover {
+  color: var(--text-light) !important;
 }
 
-.navbar .btn-outline-primary {
-    color: var(--accent-color) !important;
-    border-color: var(--accent-color) !important;
-}
-
+/* Non sovrascrivere troppo Bootstrap: tieni .bg-dark davvero dark */
 .bg-dark {
-    background-color: var(--secondary-color) !important;
+  background-color: rgba(23,26,31,.95) !important;
 }
 
-.shadow-sm {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Card e pulsanti */
+/* ---- Cards ---- */
 .card {
-    background-color: #2c2c2c;
-    color: var(--text-light);
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease-in-out;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 60%), var(--card-bg);
+  color: var(--text-light);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  transition: transform .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease);
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.45);
+  border-color: rgba(138,180,248,.22);
 }
 
+.card-header {
+  background: rgba(255,255,255,.03) !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-top-left-radius: var(--r-lg) !important;
+  border-top-right-radius: var(--r-lg) !important;
+}
+
+/* ---- Buttons ---- */
 .btn {
-    border-radius: 50px; /* Bordi molto arrotondati */
-    font-weight: 600;
-    transition: all 0.3s ease;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  padding: 10px 18px;
+  transition: transform .12s var(--ease), filter .12s var(--ease), box-shadow .18s var(--ease);
+}
+
+.btn:active {
+  transform: translateY(1px);
 }
 
 .btn-primary {
-    background-color: var(--primary-color) !important;
-    border: none;
-    padding: 10px 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, var(--primary-color), #2a35a8) !important;
+  border: none !important;
+  box-shadow: 0 10px 25px rgba(26,35,126,.28);
 }
 
 .btn-primary:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    background-color: #394294 !important;
+  filter: brightness(1.05);
+  box-shadow: 0 12px 30px rgba(26,35,126,.36);
+}
+
+.btn-outline-primary {
+  color: var(--accent-soft) !important;
+  border-color: rgba(138,180,248,.55) !important;
+}
+.btn-outline-primary:hover {
+  background: rgba(138,180,248,.14) !important;
+  border-color: rgba(138,180,248,.75) !important;
+  color: var(--text-light) !important;
 }
 
 .btn-secondary {
-    background-color: var(--accent-color) !important;
-    border: none;
-    padding: 10px 25px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, var(--accent-warn), #e7b22f) !important;
+  border: none !important;
+  color: #1b1b1b !important;
+  box-shadow: 0 10px 25px rgba(246,195,67,.22);
 }
-
 .btn-secondary:hover {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    background-color: #f1b307 !important;
+  filter: brightness(1.03);
+  box-shadow: 0 12px 30px rgba(246,195,67,.28);
 }
 
-/* Stile per tabelle e sezioni */
+/* ---- Badges ---- */
+.badge {
+  border-radius: 999px;
+  padding: .45rem .65rem;
+  font-weight: 800;
+}
+
+.badge.bg-info {
+  background: rgba(138,180,248,.16) !important;
+  color: var(--accent-soft) !important;
+  border: 1px solid rgba(138,180,248,.25);
+}
+
+.badge.bg-warning {
+  background: rgba(246,195,67,.18) !important;
+  color: #f6c343 !important;
+  border: 1px solid rgba(246,195,67,.28);
+}
+
+.text-primary { color: var(--accent-soft) !important; }
+.text-success { color: #63d392 !important; }
+.text-warning { color: var(--accent-warn) !important; }
+.text-info { color: var(--accent-soft) !important; }
+
+/* ---- List group (match lists, top players) ---- */
+.list-group-item {
+  background: rgba(255,255,255,.02) !important;
+  color: var(--text-light) !important;
+  border-color: var(--border) !important;
+}
+.list-group-item a { color: var(--text-light) !important; }
+.list-group-item a:hover { color: var(--accent-soft) !important; }
+
+/* ---- Tables ---- */
 .table {
-    color: var(--text-light);
+  color: var(--text-light) !important;
 }
-
 .table th {
-    border-top: none;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
+  border-top: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: rgba(230,232,238,.92) !important;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: .82rem;
+  letter-spacing: .6px;
 }
-
+.table td {
+  border-color: var(--border) !important;
+}
 .table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255,255,255,.03) !important;
+}
+.table-striped tbody tr:hover {
+  background-color: rgba(138,180,248,.06) !important;
 }
 
+/* ---- Hero section ---- */
 .hero-section {
-    background: linear-gradient(135deg, var(--primary-color), #1e3a5f);
-    color: white;
-    padding: 6rem 0;
+  background: linear-gradient(135deg, rgba(26,35,126,.85), rgba(63,81,181,.55));
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: var(--r-lg);
+  padding: 4rem 0;
 }
 
+/* ---- Stats card accent ---- */
 .stats-card {
-    border-left: 4px solid var(--accent-color);
+  border-left: 4px solid rgba(138,180,248,.65);
 }
 
+/* ---- Match card ---- */
 .match-card {
-    border-radius: 1rem;
-    overflow: hidden;
+  border-radius: var(--r-lg);
+  overflow: hidden;
 }
 
-/* Dettagli specifici per i loghi */
+/* ---- Logos ---- */
 .team-logo {
-    width: 100px;
-    height: auto;
-    border-radius: 50%;
-    background-color: var(--secondary-color);
-    padding: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease-in-out;
+  width: 92px;
+  height: auto;
+  border-radius: 50%;
+  background: rgba(63,81,181,.22);
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 10px 25px rgba(0,0,0,.25);
+  transition: transform .18s var(--ease);
 }
-
 .team-logo:hover {
-    transform: scale(1.05);
-}
-
-/* Stile per i link */
-a {
-    color: var(--accent-color);
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-a:hover {
-    color: #f1b307;
-}
-
-.card-link-wrapper {
-    text-decoration: none;
-    color: inherit;
+  transform: scale(1.03);
 }
 
 .team-logo-placeholder {
-    width: 45px; /* Rimpicciolisci */
-    height: 45px; /* Rimpicciolisci */
-    background-color: #e9ecef;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem; /* Riduci la dimensione del testo del placeholder se necessario */
-    font-weight: bold;
+  width: 45px;
+  height: 45px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(230,232,238,.75);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.05rem;
+  font-weight: 800;
 }
 
-/* ===== Stile dedicato agli articoli ===== */
-.article-content{
-  max-width: 900px;
+/* ---- Forms (se presenti) ---- */
+.form-control, .form-select {
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  color: var(--text-light) !important;
+  border-radius: var(--r-md) !important;
+}
+.form-control:focus, .form-select:focus {
+  box-shadow: 0 0 0 .2rem rgba(138,180,248,.18) !important;
+  border-color: rgba(138,180,248,.45) !important;
+}
+
+/* =========================
+   Article content
+   ========================= */
+.article-content {
+  max-width: 920px;
   margin: 0 auto;
   font-size: 1.02rem;
   line-height: 1.75;
   color: var(--text-light);
 }
 
-/* Titolo match */
-.article-content h2{
-  font-size: 1.8rem;
+.article-content h2 {
+  font-size: 1.85rem;
   margin: 0 0 1rem;
-  padding-bottom: .75rem;
-  border-bottom: 1px solid rgba(255,255,255,.10);
+  padding-bottom: .8rem;
+  border-bottom: 1px solid var(--border);
 }
 
-/* Sezioni */
-.article-content h3{
-  font-size: 1.05rem;
-  margin: 1.4rem 0 .6rem;
+.article-content h3 {
+  font-size: 1.02rem;
+  margin: 1.5rem 0 .65rem;
   text-transform: uppercase;
-  letter-spacing: .6px;
-  color: rgba(255,255,255,.85);
+  letter-spacing: .7px;
+  color: rgba(230,232,238,.86);
 }
 
-/* Paragrafi e liste */
-.article-content p{
-  margin: 0 0 .9rem;
+.article-content p {
+  margin: 0 0 .95rem;
+  color: rgba(230,232,238,.82);
 }
 
-.article-content ul{
-  margin: .3rem 0 1rem;
-  padding-left: 1.1rem;
+.article-content ul {
+  margin: .35rem 0 1rem;
+  padding-left: 1.15rem;
 }
 
-.article-content li{
-  margin: .35rem 0;
+.article-content li {
+  margin: .4rem 0;
+  color: rgba(230,232,238,.84);
 }
 
-/* Evidenziazioni (quando userai <strong> nel testo) */
-.article-content strong{
-  color: var(--accent-color);
-  font-weight: 700;
+/* ✅ Highlight UX-friendly per nomi/statistiche */
+.article-content strong {
+  color: var(--accent-soft);
+  font-weight: 800;
 }
 
-/* Se il modello ogni tanto sputa fuori blocchi code */
+/* Code fences / blocchi code (se scappano fuori) */
 .article-content pre,
-.article-content code{
+.article-content code {
   background: rgba(0,0,0,.35);
   border: 1px solid rgba(255,255,255,.08);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   color: var(--text-light);
 }
-
-.article-content pre{
+.article-content pre {
   padding: .9rem 1rem;
   overflow-x: auto;
   margin: .8rem 0 1rem;
 }
-
-.article-content code{
+.article-content code {
   padding: .15rem .35rem;
+}
+
+/* Utility */
+.shadow-sm { box-shadow: 0 6px 18px rgba(0,0,0,.25) !important; }
+.card-link-wrapper { text-decoration: none; color: inherit; }
+
+/* =========================
+   Matches — Widget Giornata
+   ========================= */
+
+.matchday-select{
+  min-width: 180px;
+}
+
+.matchday-card{
+  max-width: 420px;
+  margin: 0 auto;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+.matchday-header{
+  display:flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.02);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+
+.matchday-title{
+  font-weight: 900;
+  font-size: .92rem;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: rgba(230,232,238,.95);
+}
+
+.matchday-sub{
+  font-size: .78rem;
+  color: rgba(230,232,238,.60);
+}
+
+.fixture-row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  text-decoration: none;
+  color: inherit;
+}
+
+.fixture-row:hover{
+  background: rgba(138,180,248,.06);
+}
+
+.team{
+  flex: 1;
+  min-width: 0;
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.team-top{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.team-name{
+  font-size: .90rem;
+  font-weight: 700;
+  color: rgba(230,232,238,.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  text-align: center;
+}
+
+.fanta-points{
+  margin-top: 2px;
+  font-size: .86rem;
+  font-weight: 900;
+  color: #8ab4f8; /* UX friendly */
+}
+
+.team-logo-sm{
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(63,81,181,.22);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.team-logo-fallback{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: .85rem;
+  font-weight: 900;
+  color: rgba(230,232,238,.80);
+}
+
+.scorebox{
+  width: 86px;
+  text-align:center;
+}
+
+.scorebox .score{
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: .5px;
+  line-height: 1;
+  color: rgba(230,232,238,.92);
+}
+
+.matchday-footer{
+  padding: 10px 12px;
+  background: rgba(255,255,255,.02);
+}
+
+.matchday-footer a{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(230,232,238,.88);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: .82rem;
+  letter-spacing: .5px;
+}
+
+.matchday-footer a:hover{
+  background: rgba(138,180,248,.10);
+  border-color: rgba(138,180,248,.25);
+  color: rgba(230,232,238,.95);
+}
+
+/* mobile */
+@media (max-width: 420px){
+  .matchday-card{ max-width: 100%; }
+  .team-name{ max-width: 120px; }
+}
+
+.matchday-block{
+  margin-bottom: 16px;
+}
+
+/* Match detail header */
+.match-header{
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.match-header-top{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.match-scoreline{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 12px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+}
+
+.match-team{
+  flex: 1;
+  min-width: 0;
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  gap: 8px;
+}
+
+.team-logo-lg{
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(63,81,181,.22);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.match-team-name{
+  font-weight: 800;
+  font-size: .95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  text-align:center;
+}
+
+.match-center{
+  width: 220px;
+  text-align:center;
+}
+
+.match-goals{
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: .5px;
+  line-height: 1;
+}
+
+.match-points{
+  margin-top: 4px;
+  font-weight: 900;
+  color: #8ab4f8;
+}
+
+.stat-big{
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
+@media (max-width: 576px){
+  .match-center{ width: 160px; }
+  .match-goals{ font-size: 2.0rem; }
+  .team-logo-lg{ width: 54px; height: 54px; }
+  .match-team-name{ max-width: 120px; font-size: .9rem; }
+}
+
+.score-label{
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: rgba(230,232,238,.65);
+}
+
+.points-row{
+  display:flex;
+  align-items: baseline;
+  justify-content:center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.points-row .pt{
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: rgba(230,232,238,.92);
+  font-variant-numeric: tabular-nums; /* numeri allineati */
+}
+
+.match-center .sep{
+  font-weight: 900;
+  color: rgba(230,232,238,.55);
+}
+
+.points-diff{
+  margin-top: 4px;
+  font-size: .85rem;
+  font-weight: 900;
+  color: #8ab4f8;
+}
+
+/* ===== Standings UX ===== */
+.standings-table th{
+  font-size:.78rem;
+  text-transform: uppercase;
+  letter-spacing:.6px;
+}
+.standings-team{ color: rgba(230,232,238,.92); }
+.standings-team:hover{ color:#8ab4f8; }
+
+.badge-soft{
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(230,232,238,.9);
+  font-weight: 900;
+}
+
+.row-leader{
+  background: rgba(138,180,248,.06) !important;
+}
+
+.podium-card .podium-rank{
+  font-weight: 900;
+  color: rgba(230,232,238,.92);
+}
+.podium-team{
+  display:block;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: rgba(230,232,238,.95);
+}
+.podium-team:hover{ color:#8ab4f8; }
+
+.quickstat .qs-emoji{ font-size: 1.8rem; }
+.quickstat .qs-title{
+  font-size:.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing:.6px;
+  color: rgba(230,232,238,.65);
+}
+.quickstat .qs-main{
+  font-size: 1.15rem;
+  font-weight: 900;
+  margin-top: 6px;
+}
+
+/* ===== Dark tables fix (Bootstrap 5) ===== */
+.standings-table{
+  --bs-table-bg: transparent;
+  --bs-table-color: rgba(230,232,238,.92);
+  --bs-table-border-color: rgba(255,255,255,.10);
+
+  --bs-table-striped-bg: rgba(255,255,255,.03);
+  --bs-table-striped-color: rgba(230,232,238,.92);
+
+  --bs-table-hover-bg: rgba(138,180,248,.06);
+  --bs-table-hover-color: rgba(230,232,238,.95);
+}
+
+/* Header leggibile */
+.standings-table thead th{
+  background: rgba(255,255,255,.04) !important;
+  color: rgba(230,232,238,.92) !important;
+  border-bottom: 1px solid rgba(255,255,255,.12) !important;
+}
+
+/* Celle */
+.standings-table td{
+  background: transparent !important;
+  color: rgba(230,232,238,.90) !important;
+}
+
+/* Se Bootstrap ti impone bianco sui <tr> */
+.standings-table tbody tr{
+  background: transparent !important;
 }

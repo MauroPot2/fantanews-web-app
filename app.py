@@ -129,37 +129,82 @@ def index():
 
 @app.route('/matches')
 def matches():
-    """Lista partite con paginazione e filtri"""
     page = request.args.get('page', 1, type=int)
     gameweek = request.args.get('gameweek', type=int)
-    
-    query = Match.query
-    if gameweek:
-        query = query.filter_by(gameweek=gameweek)
-    
-    pagination = query.order_by(Match.gameweek.desc(), Match.id.desc()).paginate(
-        page=page, 
-        per_page=app.config['MATCHES_PER_PAGE'], 
-        error_out=False
-    )
-    
-    # Carica tutte le squadre e crea un dizionario per un accesso rapido
+
+    # Mappa squadre per loghi
     teams = Team.query.all()
     teams_map = {team.name: team for team in teams}
-    
-    return render_template('matches.html', 
-                         matches=pagination.items, 
-                         pagination=pagination,
-                         selected_gameweek=gameweek,
-                         teams_map=teams_map)
+
+    # Se l’utente seleziona una singola giornata: mostro SOLO quella (niente paginazione)
+    if gameweek:
+        gw_matches = (Match.query
+                      .filter_by(gameweek=gameweek)
+                      .order_by(Match.id.desc())
+                      .all())
+        grouped_matches = [(gameweek, gw_matches)]
+        pagination = None
+
+        return render_template(
+            'matches.html',
+            grouped_matches=grouped_matches,
+            pagination=pagination,
+            selected_gameweek=gameweek,
+            teams_map=teams_map
+        )
+
+    # Altrimenti: pagino le GIORNATE (non le partite)
+    gameweeks_per_page = app.config.get('GAMEWEEKS_PER_PAGE', 4)
+
+    gw_query = (db.session.query(Match.gameweek)
+                .distinct()
+                .order_by(Match.gameweek.desc()))
+
+    gw_pagination = gw_query.paginate(page=page, per_page=gameweeks_per_page, error_out=False)
+
+    # Estrai lista giornate dalla paginazione
+    gws = []
+    for row in gw_pagination.items:
+        # row può essere tuple/Row: prendo il primo elemento
+        gws.append(row[0] if not isinstance(row, int) else row)
+
+    # Prendo tutte le partite di quelle giornate
+    matches_list = (Match.query
+                    .filter(Match.gameweek.in_(gws))
+                    .order_by(Match.gameweek.desc(), Match.id.desc())
+                    .all())
+
+    # Raggruppo mantenendo l’ordine delle giornate
+    bucket = {gw: [] for gw in gws}
+    for m in matches_list:
+        bucket[m.gameweek].append(m)
+
+    grouped_matches = [(gw, bucket[gw]) for gw in gws]
+
+    return render_template(
+        'matches.html',
+        grouped_matches=grouped_matches,
+        pagination=gw_pagination,   # <-- paginazione giornate
+        selected_gameweek=None,
+        teams_map=teams_map
+    )
 
 @app.route('/matches/<int:match_id>')
 def match_detail(match_id):
     """Dettaglio singola partita"""
     match = Match.query.get_or_404(match_id)
     article = Article.query.filter_by(match_id=match_id).first()
-    
-    return render_template('match_detail.html', match=match, article=article)
+
+    # ✅ Mappa squadre per loghi (usata dal template)
+    teams_map = {t.name: t for t in Team.query.all()}
+
+    return render_template(
+        'match_detail.html',
+        match=match,
+        article=article,
+        teams_map=teams_map
+    )
+
 
 @app.route('/articles')
 def articles():

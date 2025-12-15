@@ -1,155 +1,158 @@
 {% extends "base.html" %}
-
 {% block title %}Partite{% endblock %}
 
-{% block head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
-{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="display-6 fw-bold text-primary mb-3">⚽ Partite del Campionato</h1>
-            <p class="lead text-muted">Risultati e statistiche di tutte le partite</p>
-        </div>
+<div class="container py-4">
+
+  <!-- Header + filtro -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h1 class="h4 mb-1">Partite</h1>
+      <div class="text-muted small">Risultati per giornata</div>
     </div>
 
-    <!-- Filtri -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">🔍 Filtra per Giornata</h5>
-                    <form method="GET" class="d-flex gap-2">
-                        <select name="gameweek" class="form-select">
-                            <option value="">Tutte le giornate</option>
-                            {% for gw in range(1, 39) %}
-                                <option value="{{ gw }}" {% if gw == selected_gameweek %}selected{% endif %}>
-                                    Giornata {{ gw }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-funnel-fill"></i> Filtra
-                        </button>
-                        <a href="{{ url_for('matches') }}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </a>
-                    </form>
+    <form method="GET" class="d-flex gap-2 align-items-center">
+      <select name="gameweek" class="form-select form-select-sm matchday-select">
+        <option value="">Tutte le giornate</option>
+        {% for gw in range(1, 39) %}
+          <option value="{{ gw }}" {% if gw == selected_gameweek %}selected{% endif %}>
+            Giornata {{ gw }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <button class="btn btn-primary btn-sm" type="submit" title="Filtra">
+        <i class="bi bi-funnel-fill"></i>
+      </button>
+
+      {% if selected_gameweek %}
+        <a class="btn btn-outline-primary btn-sm" href="{{ url_for('matches') }}" title="Reset">
+          <i class="bi bi-arrow-clockwise"></i>
+        </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Contenuto -->
+  {% if grouped_matches and grouped_matches|length > 0 %}
+
+    {% for gw, gw_matches in grouped_matches %}
+      <div class="matchday-block">
+        <div class="matchday-card">
+
+          <div class="matchday-header">
+            <div class="matchday-title">
+              {% if selected_gameweek %}
+                GIORNATA {{ selected_gameweek }}
+              {% else %}
+                GIORNATA {{ gw }}
+              {% endif %}
+            </div>
+            <div class="matchday-sub">(Fanta Grimaldi • Serie A)</div>
+          </div>
+
+          {% for match in gw_matches %}
+            {% set home_team_obj = teams_map.get(match.home_team) %}
+            {% set away_team_obj = teams_map.get(match.away_team) %}
+
+            <a class="fixture-row" href="{{ url_for('match_detail', match_id=match.id) }}">
+
+              <!-- HOME -->
+              <div class="team">
+                <div class="team-top">
+                  {% if home_team_obj and home_team_obj.logo_url %}
+                    <img
+                      src="{{ url_for('static', filename=home_team_obj.logo_url) }}"
+                      alt="{{ match.home_team }}"
+                      class="team-logo-sm"
+                      loading="lazy"
+                    >
+                  {% else %}
+                    <div class="team-logo-sm team-logo-fallback">{{ match.home_team[0] }}</div>
+                  {% endif %}
+
+                  <div class="team-name" title="{{ match.home_team }}">{{ match.home_team }}</div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    {% if matches and matches|length > 0 %}
-        <div class="row g-4">
-            {% for match in matches %}
-                {% set home_score = match.home_score | float %}
-                {% set away_score = match.away_score | float %}
-                {% set home_goals = ((home_score - 60) / 6) | int if home_score > 60 else 0 %}
-                {% set away_goals = ((away_score - 60) / 6) | int if away_score > 60 else 0 %}
-                
-                <div class="col-lg-6 col-xl-4">
-                    <div class="card h-100 shadow-sm border-0 hover-card">
-                        <div class="card-body">
-
-                            <!-- Gameweek -->
-                            <div class="text-center mb-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-calendar-event me-1"></i>
-                                    Giornata {{ match.gameweek | default('N/A') }}
-                                </small>
-                            </div>
-                            
-                            <!-- Teams -->
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <div class="team-section text-center flex-grow-1">
-                                    {% set home_team_obj = teams_map.get(match.home_team) %}
-                                    {% if home_team_obj and home_team_obj.logo_url %}
-                                        <img src="{{ url_for('static', filename=home_team_obj.logo_url) }}" alt="{{ home_team_obj.name }}" class="team-logo mb-1">
-                                    {% else %}
-                                        <div class="team-logo-placeholder bg-light text-dark mb-1">{{ match.home_team[0] }}</div>
-                                    {% endif %}
-                                    <h5 class="fw-bold mb-0 small">{{ match.home_team | default('Casa') }}</h5>
-                                </div>
-                                <div class="vs-section mx-3">
-                                    <span class="badge bg-light text-dark">VS</span>
-                                </div>
-                                <div class="team-section text-center flex-grow-1">
-                                    {% set away_team_obj = teams_map.get(match.away_team) %}
-                                    {% if away_team_obj and away_team_obj.logo_url %}
-                                        <img src="{{ url_for('static', filename=away_team_obj.logo_url) }}" alt="{{ away_team_obj.name }}" class="team-logo mb-1">
-                                    {% else %}
-                                        <div class="team-logo-placeholder bg-light text-dark mb-1">{{ match.away_team[0] }}</div>
-                                    {% endif %}
-                                    <h5 class="fw-bold mb-0 small">{{ match.away_team | default('Trasferta') }}</h5>
-                                </div>
-                            </div>
-
-                            <!-- Score -->
-                            <div class="score-section text-center mb-3 p-3 bg-light rounded">
-                                <h3 class="fw-bold text-primary mb-1">{{ home_goals }} - {{ away_goals }}</h3>
-                                <small class="text-muted">
-                                    Punteggio {{ "%.1f"|format(home_score) }} - {{ "%.1f"|format(away_score) }}
-                                </small>
-                            </div>
-
-                            <!-- Result Badge -->
-                            <div class="text-center mb-3">
-                                {% if home_goals > away_goals %}
-                                    <span class="badge bg-success px-3 py-1">
-                                        <i class="bi bi-house-fill me-1"></i>Vittoria Casa
-                                    </span>
-                                {% elif away_goals > home_goals %}
-                                    <span class="badge bg-info px-3 py-1">
-                                        <i class="bi bi-airplane-fill me-1"></i>Vittoria Trasferta
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark px-3 py-1">
-                                        <i class="bi bi-handshake me-1"></i>Pareggio
-                                    </span>
-                                {% endif %}
-                            </div>
-
-
-                            <!-- Action Button -->
-                            <div class="d-grid">
-                                <a href="{{ url_for('match_detail', match_id=match.id) }}" class="btn btn-primary">
-                                    <i class="bi bi-eye-fill me-2"></i>Vedi Dettagli
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                <div class="fanta-points">
+                  {{ "%.2f"|format(match.home_score|float)|replace('.', ',') }}
                 </div>
-            {% endfor %}
+              </div>
+
+              <!-- SCORE -->
+              <div class="scorebox">
+                <div class="score">{{ match.home_goals }} - {{ match.away_goals }}</div>
+              </div>
+
+              <!-- AWAY -->
+              <div class="team">
+                <div class="team-top">
+                  <div class="team-name" title="{{ match.away_team }}">{{ match.away_team }}</div>
+
+                  {% if away_team_obj and away_team_obj.logo_url %}
+                    <img
+                      src="{{ url_for('static', filename=away_team_obj.logo_url) }}"
+                      alt="{{ match.away_team }}"
+                      class="team-logo-sm"
+                      loading="lazy"
+                    >
+                  {% else %}
+                    <div class="team-logo-sm team-logo-fallback">{{ match.away_team[0] }}</div>
+                  {% endif %}
+                </div>
+
+                <div class="fanta-points">
+                  {{ "%.2f"|format(match.away_score|float)|replace('.', ',') }}
+                </div>
+              </div>
+
+            </a>
+          {% endfor %}
+
+          <div class="matchday-footer">
+            <a href="{{ url_for('matches', gameweek=gw) }}">
+              DETTAGLIO GIORNATA <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+
         </div>
-    {% else %}
-        <div class="empty-state text-center py-5">
-            <div class="mb-4">
-                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
-            </div>
-            <h3 class="text-muted mb-3">Nessuna partita trovata</h3>
-            <p class="text-muted mb-4">
-                {% if selected_gameweek %}
-                    Non ci sono partite per la giornata {{ selected_gameweek }}.
-                {% else %}
-                    Non ci sono partite nel database.
-                {% endif %}
-            </p>
-            <div class="d-flex gap-2 justify-content-center">
-                {% if selected_gameweek %}
-                    <a href="{{ url_for('matches') }}" class="btn btn-primary">
-                        <i class="bi bi-arrow-left me-2"></i>Vedi Tutte
-                    </a>
-                {% endif %}
-                <a href="{{ url_for('admin') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-plus-circle me-2"></i>Aggiungi Partite
-                </a>
-            </div>
-        </div>
+      </div>
+    {% endfor %}
+
+    <!-- Paginazione (solo quando NON stai filtrando una giornata) -->
+    {% if pagination %}
+    <nav class="d-flex justify-content-center mt-3">
+      <ul class="pagination pagination-sm mb-0">
+
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('matches', page=pagination.prev_num) }}">«</a>
+        </li>
+
+        <li class="page-item disabled">
+          <span class="page-link">{{ pagination.page }} / {{ pagination.pages }}</span>
+        </li>
+
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('matches', page=pagination.next_num) }}">»</a>
+        </li>
+
+      </ul>
+    </nav>
     {% endif %}
-</div>
 
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-calendar-x" style="font-size:3rem;"></i>
+      <div class="mt-3">Nessuna partita trovata.</div>
+      {% if selected_gameweek %}
+        <div class="mt-2">
+          <a class="btn btn-outline-primary btn-sm" href="{{ url_for('matches') }}">
+            <i class="bi bi-arrow-left"></i> Vedi tutte
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
 {% endblock %}

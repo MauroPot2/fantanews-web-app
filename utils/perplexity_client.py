@@ -3,7 +3,7 @@ import requests
 import re
 
 TEAM_CUSTOMIZATIONS = {
-    '21 CANNELLONI' : {
+    '21 CANNELLONI FC' : {
         'stadio': 'Merisacchio Stadium',
         'allenatore': 'Giovanni',
         'nomignolo': 'il principe ereditiero',
@@ -34,7 +34,7 @@ TEAM_CUSTOMIZATIONS = {
         'allenatore': 'Gaetano',
         'nomignolo': 'Tano'
     },
-    'A.S.DONALD DUCK' : {
+    'A.S. DONALD DUCK' : {
         'stadio': 'Paperopoli Stadium',
         'allenatore': 'Antonio Pucci',
         'nomignolo': 'il professore'
@@ -256,7 +256,7 @@ class PerplexityClient:
         # Migliori performance (opzionale)
         top_performers = match_data.get('player_analysis', {}).get('top_performers', [])
         if top_performers:
-            lines.append("\n**Migliori prestazioni:**")
+            lines.append("\nMigliori prestazioni:")
             for performer in top_performers[:5]:
                 lines.append(f"- {performer}")
 
