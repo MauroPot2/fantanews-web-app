@@ -255,83 +255,76 @@ def standings():
     
 @app.route('/stats')
 def stats():
-    """
-    Gestisce la pagina delle statistiche.
-    Recupera i dati necessari dal database e li passa al template.
-    """
     try:
-        # Recupera un dizionario di tutti i nomi delle squadre per un accesso efficiente
-        teams_dict = {team.id: team.name for team in Team.query.all()}
-        
-        # Statistiche generali
         total_matches = Match.query.count()
         total_teams = Team.query.count()
         all_matches = Match.query.all()
-        
-        # Calcola la somma totale dei gol effettivi e dei punti
-        total_goals_sum = sum((match.home_score or 0) + (match.away_score or 0) for match in all_matches)
-        total_points_sum = sum((match.home_total or 0) + (match.away_total or 0) for match in all_matches)
 
-        # Calcola le medie
-        avg_goals_per_match = (total_goals_sum / total_matches) if total_matches > 0 else 0
-        avg_points_per_match = (total_points_sum / total_matches) if total_matches > 0 else 0
-        
-        gameweek_stats_raw = db.session.query(
-            Match.gameweek.label("gw"),
-            func.count(Match.id).label("matches"),
-            func.coalesce(func.sum(Match.home_score + Match.away_score), 0).label("total_goals"),
-            func.coalesce(func.avg(Match.home_score + Match.away_score), 0).label("avg_goals"),
-            func.coalesce(func.sum(Match.home_total + Match.away_total), 0).label("total_points"),
-            func.coalesce(func.avg(Match.home_total + Match.away_total), 0).label("avg_points"),
-        ).group_by(Match.gameweek).order_by(Match.gameweek).all()
+        # ✅ PUNTI fantacalcio (sono home_score/away_score)
+        total_points_sum = sum((m.home_score or 0) + (m.away_score or 0) for m in all_matches)
 
-        gameweek_stats = {
-            row.gw: {
-                "matches": row.matches,
-                "total_goals": float(row.total_goals or 0),
-                "avg_goals": float(row.avg_goals or 0),
-                "total_points": float(row.total_points or 0),
-                "avg_points": float(row.avg_points or 0),
-            }
-            for row in gameweek_stats_raw
-        }
+        # ✅ GOL ricavati dai punti
+        total_goals_sum = sum(
+            points_to_goals(m.home_score or 0) + points_to_goals(m.away_score or 0)
+            for m in all_matches
+        )
 
-        # Dati squadre
+        avg_points_per_match = (total_points_sum / total_matches) if total_matches else 0.0
+        avg_goals_per_match  = (total_goals_sum / total_matches) if total_matches else 0.0
+
+        # ✅ Stats per giornata (in python, perché points_to_goals non puoi farlo in SQL facilmente)
+        gameweek_stats = {}
+        for m in all_matches:
+            gw = m.gameweek
+            pts = (m.home_score or 0) + (m.away_score or 0)
+            goals = points_to_goals(m.home_score or 0) + points_to_goals(m.away_score or 0)
+
+            if gw not in gameweek_stats:
+                gameweek_stats[gw] = {"matches": 0, "total_points": 0.0, "total_goals": 0.0}
+
+            gameweek_stats[gw]["matches"] += 1
+            gameweek_stats[gw]["total_points"] += float(pts)
+            gameweek_stats[gw]["total_goals"] += float(goals)
+
+        for gw, st in gameweek_stats.items():
+            st["avg_points"] = st["total_points"] / st["matches"] if st["matches"] else 0.0
+            st["avg_goals"]  = st["total_goals"] / st["matches"] if st["matches"] else 0.0
+
+        # Partite “spettacolari”: decidi se per PUNTI o per GOL.
+        # Qui le ordino per PUNTI (coerente col tuo DB)
+        high_scoring_matches = sorted(
+            all_matches, key=lambda m: (m.home_score or 0) + (m.away_score or 0), reverse=True
+        )[:5]
+
+        spectacular_matches = [{
+            "home_team": m.home_team,
+            "away_team": m.away_team,
+            "home_score": m.home_score,
+            "away_score": m.away_score,
+            "gameweek": m.gameweek,
+            "id": m.id
+        } for m in high_scoring_matches]
+
+        # --- il resto della tua route può rimanere uguale ---
         teams = Team.query.order_by(Team.points.desc()).all()
         top_team = teams[0] if teams else None
-        
         top_scorer_team = Team.query.order_by(Team.goals_for.desc()).first()
-        
         best_defense = Team.query.filter(Team.matches_played > 0).order_by(Team.goals_against).first()
 
-        # Partite più spettacolari (con più gol)
-        high_scoring_matches = Match.query.order_by(
-            (Match.home_score + Match.away_score).desc()
-        ).limit(5).all()
-        
-        # Converte gli oggetti Match in dizionari per il template
-        spectacular_matches = [
-            {
-                'home_team': match.home_team, 
-                'away_team': match.away_team, 
-                'home_score': match.home_score,
-                'away_score': match.away_score,
-                'gameweek': match.gameweek,
-                'id': match.id
-            } for match in high_scoring_matches
-        ]
-        
-        # Statistiche individuali
         top_scorers = Player.query.order_by(Player.goals.desc()).limit(10).all()
         top_assisters = Player.query.order_by(Player.assists.desc()).limit(10).all()
         best_goalkeepers = Player.query.filter_by(is_goalkeeper=True).order_by(Player.clean_sheets.desc()).limit(5).all()
-        
-        # Nuove query per i top e flop fantavoto
-        top_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(desc(PlayerStat.fanta_vote)).limit(5).all()
-        flop_fantavoto_players = PlayerStat.query.options(joinedload(PlayerStat.player).joinedload(Player.team)).order_by(PlayerStat.fanta_vote.asc()).limit(5).all()
+
+        top_fantavoto_players = PlayerStat.query.options(
+            joinedload(PlayerStat.player).joinedload(Player.team)
+        ).order_by(desc(PlayerStat.fanta_vote)).limit(5).all()
+
+        flop_fantavoto_players = PlayerStat.query.options(
+            joinedload(PlayerStat.player).joinedload(Player.team)
+        ).order_by(PlayerStat.fanta_vote.asc()).limit(5).all()
 
         return render_template(
-            'stats.html',
+            "stats.html",
             total_matches=total_matches,
             total_teams=total_teams,
             avg_goals_per_match=avg_goals_per_match,
@@ -350,9 +343,9 @@ def stats():
         )
 
     except Exception as e:
-        # Gestione degli errori
         print(f"Errore nella route stats: {e}")
-        return render_template('errors/500.html'), 500
+        return render_template("errors/500.html"), 500
+
 
 @app.route('/api/top-scorers')
 def api_top_scorers():
