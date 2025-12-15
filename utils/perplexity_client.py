@@ -25,9 +25,9 @@ TEAM_CUSTOMIZATIONS = {
         'nomignolo': 'Orso'
     },
     'ESTATHEO' : {
-        'stadio': '',
+        'stadio': 'Comunale di Grimaldi',
         'allenatore': 'Bruno',
-        'nomignolo': ''
+        'nomignolo': 'Mister Bruno'
     },
     'FC CELL-TIC GLASGOW' : {
         'stadio': 'Vasciuta UPower',
@@ -42,7 +42,7 @@ TEAM_CUSTOMIZATIONS = {
     'MBARCATURA © FC' : {
         'stadio': 'Stadio Mbarcatura',
         'allenatore': 'Riccardo',
-        'nomignolo': ''
+        'nomignolo': 'Rick'
     },
     'EPICTOMINELLO' : {
         'stadio': 'BarberShop Stadium',
@@ -52,7 +52,7 @@ TEAM_CUSTOMIZATIONS = {
     'NK MAURIBOR'   : {
         'stadio': 'Peroni Arena',
         'allenatore': 'Mauro',
-        'nomignolo': ''
+        'nomignolo': 'il catanzarese'
     },
   
  }
