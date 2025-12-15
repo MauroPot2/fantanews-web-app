@@ -113,4 +113,4 @@ class PlayerStat(db.Model):
     match = db.relationship('Match', backref=db.backref('player_stats', lazy=True))
     
     def __repr__(self):
-        return f"<PlayerStat {self.player.name} - Match: {self.match.gameweek} - Fantavoto: {self.fantavoto}>"
+        return f"<PlayerStat {self.player.name} - Match: {self.match.gameweek} - Fantavoto: {self.fantavote}>"
