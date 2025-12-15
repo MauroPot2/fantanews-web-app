@@ -269,26 +269,31 @@ def stats():
         all_matches = Match.query.all()
         
         # Calcola la somma totale dei gol effettivi e dei punti
-        total_goals_sum = sum(points_to_goals(match.home_score) + points_to_goals(match.away_score) for match in all_matches)
-        total_points_sum = sum(match.home_score + match.away_score for match in all_matches)
+        total_goals_sum = sum((match.home_score or 0) + (match.away_score or 0) for match in all_matches)
+        total_points_sum = sum((match.home_total or 0) + (match.away_total or 0) for match in all_matches)
 
         # Calcola le medie
         avg_goals_per_match = (total_goals_sum / total_matches) if total_matches > 0 else 0
         avg_points_per_match = (total_points_sum / total_matches) if total_matches > 0 else 0
         
         gameweek_stats_raw = db.session.query(
-            Match.gameweek,
-            func.count(Match.gameweek),
-            func.sum(Match.home_score + Match.away_score),
-            func.avg(Match.home_score + Match.away_score)
+            Match.gameweek.label("gw"),
+            func.count(Match.id).label("matches"),
+            func.coalesce(func.sum(Match.home_score + Match.away_score), 0).label("total_goals"),
+            func.coalesce(func.avg(Match.home_score + Match.away_score), 0).label("avg_goals"),
+            func.coalesce(func.sum(Match.home_total + Match.away_total), 0).label("total_points"),
+            func.coalesce(func.avg(Match.home_total + Match.away_total), 0).label("avg_points"),
         ).group_by(Match.gameweek).order_by(Match.gameweek).all()
 
         gameweek_stats = {
-            gw: {
-                'matches': count,
-                'total_goals': total_goals,
-                'avg_goals': avg_goals
-            } for gw, count, total_goals, avg_goals in gameweek_stats_raw
+            row.gw: {
+                "matches": row.matches,
+                "total_goals": float(row.total_goals or 0),
+                "avg_goals": float(row.avg_goals or 0),
+                "total_points": float(row.total_points or 0),
+                "avg_points": float(row.avg_points or 0),
+            }
+            for row in gameweek_stats_raw
         }
 
         # Dati squadre
