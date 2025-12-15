@@ -1,5 +1,6 @@
 import os
 import requests
+import re
 
 TEAM_CUSTOMIZATIONS = {
     '21 CANNELLONI' : {
@@ -102,6 +103,8 @@ class PerplexityClient:
 
             result = response.json()
             content = result['choices'][0]['message']['content'].strip()
+            content = re.sub(r"^\s*```(?:html)?\s*", "", content, flags=re.IGNORECASE)
+            content = re.sub(r"\s*```\s*$", "", content).strip()
 
             print(f"✅ Articolo generato - lunghezza: {len(content)} caratteri")
             return content
@@ -188,9 +191,9 @@ class PerplexityClient:
             f"STRUTTURA ARTICOLO (FORMATO HTML):\n\n"
             f"<h2>{home_team} vs {away_team}</h2>\n\n"
             f"<h3>Il Resoconto della Partita</h3>\n"
-            f"<p>La partita si è giocata al {stadio_home}. Analizza il match e commenta il risultato finale di {real_home_score}-{real_away_score}.</p>\n\n"
+            f"<p>La partita si è giocata al <strong>{stadio_home}</strong>. Analizza il match e commenta il risultato finale di <strong>{real_home_score}</strong>-<strong>{real_away_score}</strong>.</p>\n\n"
             f"<p>Descrivi l'andamento del match. Commenta i punteggi totali e il risultato finale.</p>\n\n"
-            f"<p>Commenta le scelte tattiche di {allenatore_home} e {allenatore_away}.Utilizza spesso ma non sempre <strong>{nomignolo_home}</strong> e {nomignolo_away}.</p>\n\n"
+            f"<p>Commenta le scelte tattiche di <strong>{allenatore_home}</strong> e <strong>{allenatore_away}</strong>.Utilizza spesso ma non sempre <strong>{nomignolo_home}</strong> e ,<strong>{nomignolo_away}</strong>.</p>\n\n"
             f"<h3>I Migliori in Campo</h3>\n"
             f"<p>Analizza le prestazioni dei giocatori che hanno ottenuto i punteggi più alti (>8.0). Menziona almeno 3-4 nomi e il loro contributo.</p>\n\n"
             f"<h3>Le delusioni e i Flop</h3>\n"
