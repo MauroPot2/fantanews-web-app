@@ -165,3 +165,68 @@ a:hover {
     font-size: 1.2rem; /* Riduci la dimensione del testo del placeholder se necessario */
     font-weight: bold;
 }
+
+/* ===== Stile dedicato agli articoli ===== */
+.article-content{
+  max-width: 900px;
+  margin: 0 auto;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: var(--text-light);
+}
+
+/* Titolo match */
+.article-content h2{
+  font-size: 1.8rem;
+  margin: 0 0 1rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+}
+
+/* Sezioni */
+.article-content h3{
+  font-size: 1.05rem;
+  margin: 1.4rem 0 .6rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: rgba(255,255,255,.85);
+}
+
+/* Paragrafi e liste */
+.article-content p{
+  margin: 0 0 .9rem;
+}
+
+.article-content ul{
+  margin: .3rem 0 1rem;
+  padding-left: 1.1rem;
+}
+
+.article-content li{
+  margin: .35rem 0;
+}
+
+/* Evidenziazioni (quando userai <strong> nel testo) */
+.article-content strong{
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+/* Se il modello ogni tanto sputa fuori blocchi code */
+.article-content pre,
+.article-content code{
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  color: var(--text-light);
+}
+
+.article-content pre{
+  padding: .9rem 1rem;
+  overflow-x: auto;
+  margin: .8rem 0 1rem;
+}
+
+.article-content code{
+  padding: .15rem .35rem;
+}

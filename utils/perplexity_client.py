@@ -179,18 +179,18 @@ class PerplexityClient:
         # Prompt con struttura rigida
         prompt = (
             f"{base_instructions}\n\n"
-            f"**DATI PARTITA:**\n"
+            f"DATI PARTITA:\n"
             f"PARTITA: {home_team} vs {away_team}\n"
             f"RISULTATO: {home_team} {real_home_score} - {real_away_score} {away_team}\n" # ✅ Usa punteggio reale qui
             f"GIORNATA: {gameweek}\n"
             f"RIEPILOGO STATISTICHE: {summary}\n"
             f"GIOCATORI E PUNTI FANTACALCIO REALI: {players_info}\n\n"
-            f"**STRUTTURA ARTICOLO (FORMATO HTML):**\n\n"
+            f"STRUTTURA ARTICOLO (FORMATO HTML):\n\n"
             f"<h2>{home_team} vs {away_team}</h2>\n\n"
             f"<h3>Il Resoconto della Partita</h3>\n"
-            f"<p>La partita si è giocata al **{stadio_home}**. Analizza il match e commenta il risultato finale di {real_home_score}-{real_away_score}.</p>\n\n"
+            f"<p>La partita si è giocata al {stadio_home}. Analizza il match e commenta il risultato finale di {real_home_score}-{real_away_score}.</p>\n\n"
             f"<p>Descrivi l'andamento del match. Commenta i punteggi totali e il risultato finale.</p>\n\n"
-            f"<p>Commenta le scelte tattiche di **{allenatore_home}** e **{allenatore_away}**.Utilizza spesso ma non sempre **{nomignolo_home}** e **{nomignolo_away}**.</p>\n\n"
+            f"<p>Commenta le scelte tattiche di {allenatore_home} e {allenatore_away}.Utilizza spesso ma non sempre <strong>{nomignolo_home}</strong> e {nomignolo_away}.</p>\n\n"
             f"<h3>I Migliori in Campo</h3>\n"
             f"<p>Analizza le prestazioni dei giocatori che hanno ottenuto i punteggi più alti (>8.0). Menziona almeno 3-4 nomi e il loro contributo.</p>\n\n"
             f"<h3>Le delusioni e i Flop</h3>\n"
